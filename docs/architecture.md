@@ -1,0 +1,53 @@
+# Architecture
+
+Watermark Cleanup is a Next.js app designed to run on Cloudflare Workers via OpenNext.
+
+## Pipeline
+
+Upload → File classification → Watermark detection → Confidence score → Removal strategy → Reconstruction → Validation → Export
+
+Processors share one interface in `lib/processors` so a later video module can register without rewriting the app.
+
+## Modules
+
+- `lib/security` — magic-byte sniffing, size limits, filename sanitization, rate limits
+- `lib/detection` — modular image detectors (alpha, corner contrast, translucent lift, repeated pattern)
+- `lib/image-processing` — RGBA buffers, morphology, Telea-style inpainting, overlay subtraction
+- `lib/pdf-processing` — overlay-like PDF text detection and confirmed text removal, keeping page layout
+- `lib/text-processing` — repeated header/footer proposal; nothing is deleted until the user confirms
+- `lib/storage` — in-memory jobs with random ids and a 30-minute TTL
+- `lib/client` — browser-first path used by the UI
+
+## Why processing is local first
+
+Cloudflare Workers are a good place to host the UI and optional APIs, but they are a poor place for heavy native image libraries. The MVP therefore:
+
+1. Classifies and processes files in the browser with the same TypeScript libraries used in tests.
+2. Exposes `POST /api/analyze`, `POST /api/process`, `GET /api/result/[id]`, and `DELETE /api/file/[id]` for server-side jobs and automation.
+3. Keeps OpenCV.js / OCR optional. Core detection uses portable image ops instead of shipping a large WASM binary in the Worker.
+
+## Detection
+
+Detectors look for overlay-like signals rather than a single vendor:
+
+- Semi-transparent pixels
+- Compact high-contrast badges near corners or edges
+- Gentle luminance lift typical of translucent stamps
+- Repeated tiled patterns
+- Repeated or rotated PDF/text labels
+
+Candidates are scored. Large, colorful, high-texture regions are treated as content, not watermarks.
+
+## Removal
+
+Least destructive first:
+
+1. Reverse a uniform translucent overlay when the region looks like a blend.
+2. Otherwise inpaint only the selected mask.
+3. For PDF/text, remove only user-confirmed strings and keep the rest of the document.
+
+If reconstruction still looks overlay-like, the app reports a partial result instead of pretending it succeeded.
+
+## Future video support
+
+A `video` media kind already exists in classification. A later processor can decode frames, reuse the image pipeline, and remux. The UI workspace talks to the processor interface, not image-specific code only.
