@@ -2,7 +2,7 @@
 
 Privacy-focused cleanup for files you own or are allowed to edit. Upload a file, review detected overlays, then export a clean copy.
 
-This is a focused utility: **upload → identify unwanted overlay → review → remove → download**. It does not claim perfect watermark removal.
+This is a focused utility: **upload  identify unwanted overlay  review  remove  download**. It does not claim perfect watermark removal.
 
 ## What it does
 
@@ -32,7 +32,7 @@ The pipeline picks the least destructive option first:
 1. Reverse a uniform translucent overlay when that model fits.
 2. Otherwise inpaint only the mask (Telea-style reconstruction).
 3. For PDFs, remove confirmed overlay text from page content instead of rasterizing the whole document.
-4. For text, show detected lines → proposed removal → resulting text, and delete nothing until you confirm.
+4. For text, show detected lines  proposed removal  resulting text, and delete nothing until you confirm.
 
 If leftover overlay signal is still high, the result is reported as partial.
 
@@ -94,4 +94,7 @@ npx wrangler login
 npm run deploy
 ```
 
+For Cloudflare's Git-connected Workers Builds, use `npm run build:cloudflare` as the build command and `npx opennextjs-cloudflare deploy` as the deploy command. A plain `npm run build` does not create the required `.open-next` Worker output.
+
 See [docs/deployment.md](docs/deployment.md) and [docs/architecture.md](docs/architecture.md).
+
