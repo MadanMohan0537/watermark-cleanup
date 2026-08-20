@@ -77,6 +77,10 @@ export function Workspace() {
     }
   }
 
+  function onText(text: string) {
+    void onFile(new File([text], "pasted-text.txt", { type: "text/plain" }));
+  }
+
   function removeAllDetected() {
     setReviewed(true);
     const next = regions.map((region) => ({ ...region, action: "remove" as const }));
@@ -141,8 +145,8 @@ export function Workspace() {
             </p>
           </header>
           <AuthorizationGate checked={authorized} onCheckedChange={setAuthorized} />
-          <Dropzone disabled={!authorized} onFile={onFile} />
-          <p className="text-center text-sm text-stone-500">Images · PDFs · Documents</p>
+          <Dropzone disabled={!authorized} onFile={onFile} onText={onText} />
+          <p className="text-center text-sm text-stone-500">Images � PDFs � Documents</p>
         </>
       ) : null}
 
@@ -249,3 +253,4 @@ export function Workspace() {
     </div>
   );
 }
+
