@@ -27,13 +27,26 @@ npm run preview
 
 ## GitHub / CI
 
-Suggested deploy command for Cloudflare Builds:
+For a repository connected to **Workers Builds**, set the dashboard fields to these exact values:
+
+| Setting | Value |
+| --- | --- |
+| Build command | `npm run build:cloudflare` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Root directory | `/` |
+
+Do not use `npm run build` as the Workers build command. That command only creates Next.js' `.next` output. The Cloudflare build command above also converts it into the `.open-next` Worker artifact required by the deploy step.
+
+The equivalent CI sequence is:
 
 ```bash
 npm ci
 npm test
 npm run lint
 npm run typecheck
-npx opennextjs-cloudflare build
+npm run build:cloudflare
 npx opennextjs-cloudflare deploy
 ```
+
+If a previous build failed with `Could not find compiled Open Next config`, update the two dashboard command fields and retry the deployment. The normal Next.js warning about a missing build cache affects build speed only and is not a deployment failure.
+
