@@ -233,8 +233,8 @@ npm run dev              # Next.js development server
 npm run test             # Vitest suite
 npm run lint             # ESLint
 npm run typecheck        # TypeScript validation
-npm run build:next       # Plain Next.js production build
-npm run build            # OpenNext Cloudflare Worker build
+npm run build            # Next.js production build (used by CI and OpenNext)
+npm run build:cloudflare # OpenNext Cloudflare Worker build
 npm run preview          # Build and preview the Worker locally
 npm run deploy           # Build and deploy through OpenNext
 ```
@@ -276,25 +276,7 @@ The app is deployed as a Next.js application on **Cloudflare Workers** through O
 
 Therefore the deployment pipeline must run an **OpenNext build**, not only `next build`.
 
-The repository is configured so:
-
-```bash
-npm run build
-```
-
-runs:
-
-```bash
-opennextjs-cloudflare build
-```
-
-and generates `.open-next/worker.js` before Wrangler uploads the Worker.
-
-For the plain Next.js build, use:
-
-```bash
-npm run build:next
-```
+OpenNext invokes `npm run build` (`next build`) internally, then packages `.open-next/worker.js`. Do not point the `build` script at `opennextjs-cloudflare build` — that recurses until the Workers build times out.
 
 A direct deployment can be run with:
 
@@ -302,12 +284,12 @@ A direct deployment can be run with:
 npm run deploy
 ```
 
-For Cloudflare Workers Builds, a compatible setup is:
+For Cloudflare Workers Builds, use:
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npm run build` |
-| Deploy command | `npx wrangler versions upload` |
+| Build command | `npx @opennextjs/cloudflare build` |
+| Deploy command | `npx @opennextjs/cloudflare deploy` |
 | Worker entry point | `.open-next/worker.js` |
 | Assets | `.open-next/assets` |
 

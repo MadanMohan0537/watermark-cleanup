@@ -16,6 +16,8 @@ Git-connected **Workers Builds** publishes `master` automatically. A successful 
 
 Those commands are equivalent to `npm run build:cloudflare` followed by `npx @opennextjs/cloudflare deploy`.
 
+OpenNext runs `npm run build` (`next build`) as a nested step. Keep that script as `next build`. Pointing it at `opennextjs-cloudflare build` causes an infinite loop and a Workers Builds timeout.
+
 Do not set the Workers build command to `npm run build`. That only creates Next.js `.next` output. OpenNext also has to emit the `.open-next` Worker artifact that the deploy step publishes.
 
 ## Manual deploy
