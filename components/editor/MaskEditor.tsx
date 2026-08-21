@@ -42,6 +42,7 @@ export function MaskEditor({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const start = useRef<{ x: number; y: number } | null>(null);
+  const strokeMask = useRef<Uint8Array | null>(null);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -52,11 +53,13 @@ export function MaskEditor({
       if (event.key === "e" || event.key === "E") onToolChange("erase");
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
+        endStroke();
         if (event.shiftKey) onRedo();
         else onUndo();
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
         event.preventDefault();
+        endStroke();
         onRedo();
       }
     }
@@ -69,8 +72,10 @@ export function MaskEditor({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    let cancelled = false;
     const img = new Image();
     img.onload = () => {
+      if (cancelled || !canvasRef.current) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const overlay = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -101,6 +106,9 @@ export function MaskEditor({
       }
     };
     img.src = imageUrl;
+    return () => {
+      cancelled = true;
+    };
   }, [imageUrl, mask, regions, width, height]);
 
   function pointFromEvent(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -121,6 +129,17 @@ export function MaskEditor({
     }
   }
 
+  function emitStroke() {
+    if (!strokeMask.current) return;
+    onMaskChange(new Uint8Array(strokeMask.current));
+  }
+
+  function endStroke() {
+    drawing.current = false;
+    strokeMask.current = null;
+    start.current = null;
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
@@ -135,10 +154,10 @@ export function MaskEditor({
         <Button type="button" size="sm" variant="outline" onClick={onShrink}>
           Shrink
         </Button>
-        <Button type="button" size="sm" variant="outline" disabled={!canUndo} onClick={onUndo}>
+        <Button type="button" size="sm" variant="outline" disabled={!canUndo} onClick={() => { endStroke(); onUndo(); }}>
           Undo
         </Button>
-        <Button type="button" size="sm" variant="outline" disabled={!canRedo} onClick={onRedo}>
+        <Button type="button" size="sm" variant="outline" disabled={!canRedo} onClick={() => { endStroke(); onRedo(); }}>
           Redo
         </Button>
       </div>
@@ -150,38 +169,36 @@ export function MaskEditor({
         onPointerDown={(event) => {
           drawing.current = true;
           start.current = pointFromEvent(event);
+          strokeMask.current = new Uint8Array(mask);
           onBeginEdit();
           (event.target as HTMLCanvasElement).setPointerCapture(event.pointerId);
           if (tool !== "rect") {
-            const next = new Uint8Array(mask);
-            paintCircle(next, start.current.x, start.current.y, 8, tool === "erase" ? 0 : 1);
-            onMaskChange(next);
+            paintCircle(strokeMask.current, start.current.x, start.current.y, 8, tool === "erase" ? 0 : 1);
+            emitStroke();
           }
         }}
         onPointerMove={(event) => {
-          if (!drawing.current || tool === "rect") return;
+          if (!drawing.current || tool === "rect" || !strokeMask.current) return;
           const point = pointFromEvent(event);
-          const next = new Uint8Array(mask);
-          paintCircle(next, point.x, point.y, 8, tool === "erase" ? 0 : 1);
-          onMaskChange(next);
+          paintCircle(strokeMask.current, point.x, point.y, 8, tool === "erase" ? 0 : 1);
+          emitStroke();
         }}
         onPointerUp={(event) => {
           if (!drawing.current) return;
-          drawing.current = false;
-          if (tool === "rect" && start.current) {
+          if (tool === "rect" && start.current && strokeMask.current) {
             const end = pointFromEvent(event);
             const x0 = Math.max(0, Math.min(start.current.x, end.x));
             const y0 = Math.max(0, Math.min(start.current.y, end.y));
             const x1 = Math.min(width - 1, Math.max(start.current.x, end.x));
             const y1 = Math.min(height - 1, Math.max(start.current.y, end.y));
-            const next = new Uint8Array(mask);
             for (let y = y0; y <= y1; y += 1) {
-              for (let x = x0; x <= x1; x += 1) next[y * width + x] = 1;
+              for (let x = x0; x <= x1; x += 1) strokeMask.current[y * width + x] = 1;
             }
-            onMaskChange(next);
+            emitStroke();
           }
-          start.current = null;
+          endStroke();
         }}
+        onPointerCancel={endStroke}
       />
     </div>
   );

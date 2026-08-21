@@ -9,12 +9,18 @@ export function PdfPreview({ bytes, pageIndex }: { bytes: Uint8Array; pageIndex:
 
   useEffect(() => {
     let cancelled = false;
+    let doc: { destroy(): Promise<void> } | null = null;
     async function render() {
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-        const doc = await pdfjs.getDocument({ data: toArrayBuffer(bytes) }).promise;
-        const page = await doc.getPage(Math.min(doc.numPages, pageIndex + 1));
+        const loaded = await pdfjs.getDocument({ data: toArrayBuffer(bytes) }).promise;
+        doc = loaded;
+        if (cancelled) {
+          await loaded.destroy();
+          return;
+        }
+        const page = await loaded.getPage(Math.min(loaded.numPages, pageIndex + 1));
         const viewport = page.getViewport({ scale: 1.15 });
         const canvas = canvasRef.current;
         if (!canvas || cancelled) return;
@@ -30,6 +36,7 @@ export function PdfPreview({ bytes, pageIndex }: { bytes: Uint8Array; pageIndex:
     void render();
     return () => {
       cancelled = true;
+      void doc?.destroy();
     };
   }, [bytes, pageIndex]);
 
