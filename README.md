@@ -6,7 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020)
 
-A privacy-first watermark and overlay cleanup tool for images, PDFs, and text documents. Upload content you own or are authorized to edit, inspect detected overlay candidates, choose exactly what should be removed, compare the result, and export a cleaned copy.
+A privacy-first watermark and overlay cleanup workspace for images, PDFs, and text documents. Upload content you own or are authorized to edit, inspect detected overlay candidates, choose exactly what should be removed, compare the result, and export a cleaned copy.
 
 **Live demo:** https://watermark-cleanup.madanmohanlearning.workers.dev/
 
@@ -14,8 +14,10 @@ A privacy-first watermark and overlay cleanup tool for images, PDFs, and text do
 
 ## Project highlights
 
+- Premium portfolio-focused deployment with a guided demo experience.
 - Privacy-first local/browser processing whenever possible.
 - Human-in-the-loop review instead of automatic destructive removal.
+- Live browser capability indicator for WebGPU / WebAssembly readiness.
 - Image, PDF, TXT, Markdown, and browser-side WEBP support.
 - Built-in sample image, sample text, and paste-text demo so reviewers can try the flow without a personal file.
 - Magic-byte file classification instead of trusting extensions alone.
@@ -95,12 +97,12 @@ Video can be classified by the processor registry, but video watermark cleanup i
 ## Quick demo
 
 1. Open the [live deployment](https://watermark-cleanup.madanmohanlearning.workers.dev/).
-2. Click **Sample image** or **Sample text**, or confirm permission, choose **Paste text**, and click **Load demo**.
+2. Click **Try sample image** or **Try sample text** in the hero, or confirm permission and upload your own authorized content.
 3. Review the detected overlay candidates.
 4. Choose what to keep or remove. For images you can also paint or erase the mask.
 5. Compare the result and export a cleaned copy.
 
-This makes the project easy to evaluate without requiring a reviewer to find a sample file first.
+The landing page also reports whether the current browser exposes WebGPU or WebAssembly. This is a capability signal for future local acceleration; the current cleanup pipeline does not falsely claim GPU acceleration.
 
 ## Tech stack
 
@@ -112,7 +114,7 @@ This makes the project easy to evaluate without requiring a reviewer to find a s
 | PDF processing | `pdf-lib`, `pdfjs-dist` |
 | Validation | Zod |
 | Testing | Vitest |
-| CI | GitHub Actions |
+| CI | GitHub Actions on Node.js 24 |
 | Deployment | Cloudflare Workers via `@opennextjs/cloudflare` |
 
 ## Project structure
@@ -125,7 +127,7 @@ components/
   layout/             Site header and navigation
   results/            Export/download UI
   uploader/           Authorization and input flow
-  workspace/          Main application workflow
+  workspace/          Main application workflow and capability UI
 lib/
   client/             Browser-side orchestration
   detection/          Overlay detection logic
@@ -168,7 +170,7 @@ Use this project only for content you own or are authorized to modify. It is not
 
 ### Requirements
 
-- Node.js 20+
+- Node.js 24+
 - npm
 
 ```bash
@@ -182,7 +184,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-On the home screen you can upload a file after confirming permission, click **Sample image** / **Sample text**, or use **Paste text** → **Load demo**.
+On the home screen you can upload a file after confirming permission, try the authorized samples, or use the paste-text flow.
 
 ## Quality checks
 
@@ -223,18 +225,19 @@ See [docs/deployment.md](docs/deployment.md) for the full deployment notes.
 - Encrypted PDFs are rejected.
 - Server-side WEBP decoding is not supported; the browser path should be used.
 - OCR and OpenCV.js integrations are extension points rather than required dependencies.
+- The WebGPU badge reports browser capability only; GPU-accelerated cleanup is not wired into the current processing path.
 - Video cleanup is not implemented yet.
 
 ## Viable next additions
 
-The strongest future improvements would be:
+The strongest future improvements are:
 
 - batch processing with per-file review
 - OCR-assisted text-mask detection for scanned documents
-- optional local-only mode indicator with clearer processing telemetry
+- optional WebGPU-accelerated local vision modules with a CPU/WebAssembly fallback
 - undo/redo for manual mask edits
 - downloadable processing report describing detected and removed regions
-- video-frame cleanup with temporal consistency
+- video-frame cleanup for authorized footage with temporal consistency
 
 ## Contributing
 
