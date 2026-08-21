@@ -146,7 +146,7 @@ export function Workspace() {
           </header>
           <AuthorizationGate checked={authorized} onCheckedChange={setAuthorized} />
           <Dropzone disabled={!authorized} onFile={onFile} onText={onText} />
-          <p className="text-center text-sm text-stone-500">Images � PDFs � Documents</p>
+          <p className="text-center text-sm text-stone-500">Images • PDFs • Documents</p>
         </>
       ) : null}
 
@@ -253,4 +253,3 @@ export function Workspace() {
     </div>
   );
 }
-
