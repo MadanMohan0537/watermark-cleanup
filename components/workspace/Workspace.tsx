@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ImageIcon, ShieldCheck, Type } from "lucide-react";
+import { ArrowRight, FileImage, ImageIcon, LockKeyhole, ScanLine, ShieldCheck, Sparkles, Type } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { CapabilityStrip } from "@/components/workspace/CapabilityStrip";
 import { HowItWorks } from "@/components/workspace/HowItWorks";
 import { AuthorizationGate } from "@/components/uploader/AuthorizationGate";
 import { Dropzone } from "@/components/uploader/Dropzone";
@@ -160,46 +161,102 @@ export function Workspace() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
       {step === "idle" ? (
         <>
           <SiteHeader />
-          <header className="space-y-4 text-center">
-            <h1 className="text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
-              Remove unwanted watermarks from your files
-            </h1>
-            <p className="mx-auto max-w-2xl text-lg text-stone-600">
-              Upload your own or authorized media, review detected overlays, and export a clean version.
-              Processing stays on this device whenever possible.
-            </p>
-          </header>
-          <HowItWorks />
-          <AuthorizationGate checked={authorized} onCheckedChange={setAuthorized} />
-          <Dropzone disabled={!authorized} onFile={onFile} onText={onText} />
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-sm text-stone-500">Try an authorized sample created for this project</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" variant="outline" onClick={() => void loadAuthorizedSample("image")}>
-                <ImageIcon className="h-4 w-4" />
-                Sample image
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void loadAuthorizedSample("text")}>
-                <Type className="h-4 w-4" />
-                Sample text
-              </Button>
+
+          <section className="hero-shell rounded-[2rem] p-6 text-white sm:p-9 lg:p-10">
+            <div className="hero-glow right-0 top-0" />
+            <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="max-w-2xl">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-100/10 px-3 py-1.5 text-xs font-medium text-emerald-100">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Local-first cleanup workspace
+                </div>
+                <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
+                  Clean visual clutter without giving up control.
+                </h1>
+                <p className="mt-5 max-w-xl text-base leading-7 text-emerald-50/75 sm:text-lg">
+                  Inspect overlay candidates, refine the exact region yourself, compare the result, and export a clean copy. Built for content you own or are authorized to edit.
+                </p>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Button type="button" size="lg" className="bg-emerald-300 text-emerald-950 hover:bg-emerald-200" onClick={() => void loadAuthorizedSample("image")}>
+                    Try sample image <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="lg" variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={() => void loadAuthorizedSample("text")}>
+                    Try sample text
+                  </Button>
+                </div>
+                <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs text-emerald-50/60">
+                  <span className="inline-flex items-center gap-1.5"><LockKeyhole className="h-3.5 w-3.5" /> Local processing when possible</span>
+                  <span className="inline-flex items-center gap-1.5"><ScanLine className="h-3.5 w-3.5" /> Review-first detection</span>
+                  <span className="inline-flex items-center gap-1.5"><FileImage className="h-3.5 w-3.5" /> Images, PDFs, text</span>
+                </div>
+              </div>
+
+              <div className="demo-window rounded-[1.75rem] p-5 sm:p-6">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-white/25" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-300/70" />
+                  </div>
+                  <span className="rounded-full bg-emerald-300/10 px-2.5 py-1 text-[11px] font-medium text-emerald-100">Local preview</span>
+                </div>
+                <div className="mt-5 rounded-2xl border border-white/10 bg-black/15 p-4">
+                  <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-stone-100/20 via-white/10 to-emerald-200/10 p-4">
+                    <div className="relative h-full overflow-hidden rounded-lg border border-white/10 bg-[#d6ddd8]/10">
+                      <div className="absolute inset-x-[12%] top-[18%] h-[48%] rounded-xl border border-emerald-200/35 bg-emerald-200/5" />
+                      <div className="absolute bottom-4 left-4 rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-xs text-white/70">Candidate region · 86%</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-white/7 px-2 py-3"><p className="text-[10px] uppercase tracking-wider text-white/40">Detect</p><p className="mt-1 text-xs font-semibold text-white/80">Overlay</p></div>
+                  <div className="rounded-xl bg-white/7 px-2 py-3"><p className="text-[10px] uppercase tracking-wider text-white/40">Review</p><p className="mt-1 text-xs font-semibold text-white/80">Human</p></div>
+                  <div className="rounded-xl bg-white/7 px-2 py-3"><p className="text-[10px] uppercase tracking-wider text-white/40">Export</p><p className="mt-1 text-xs font-semibold text-white/80">Clean copy</p></div>
+                </div>
+              </div>
             </div>
-          </div>
-          <p className="text-center text-sm text-stone-500">Images · PDFs · Documents</p>
+          </section>
+
+          <CapabilityStrip />
+          <HowItWorks />
+
+          <section className="stage-card rounded-[2rem] p-5 sm:p-7" id="workspace">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Start here</p>
+                <h2 className="mt-1 text-2xl font-semibold text-stone-900">Open the cleanup workspace</h2>
+              </div>
+              <p className="max-w-md text-sm leading-6 text-stone-500">Confirm permission, then upload your file or paste text. You can also use the authorized samples above.</p>
+            </div>
+            <div className="grid gap-5 lg:grid-cols-[0.38fr_0.62fr]">
+              <AuthorizationGate checked={authorized} onCheckedChange={setAuthorized} />
+              <Dropzone disabled={!authorized} onFile={onFile} onText={onText} />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4">
+              <p className="text-xs text-stone-400">Supported: PNG · JPG · WEBP · PDF · TXT · Markdown</p>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="ghost" onClick={() => void loadAuthorizedSample("image")}><ImageIcon className="h-3.5 w-3.5" /> Sample image</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => void loadAuthorizedSample("text")}><Type className="h-3.5 w-3.5" /> Sample text</Button>
+              </div>
+            </div>
+          </section>
         </>
       ) : null}
 
       {step === "analyzing" || step === "processing" ? (
-        <div className="rounded-3xl border border-stone-200 bg-white p-10 text-center">
-          <p className="text-lg font-medium text-stone-900">
-            {step === "analyzing" ? "Analyzing file..." : "Cleaning selected overlays..."}
-          </p>
-          <Progress className="mx-auto mt-6 max-w-sm" value={step === "analyzing" ? 35 : 70} />
-        </div>
+        <section className="stage-card mx-auto w-full max-w-3xl rounded-[2rem] p-8 text-center sm:p-12">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+            {step === "analyzing" ? <ScanLine className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
+          </span>
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">{step === "analyzing" ? "Stage 1 of 3" : "Stage 3 of 3"}</p>
+          <h2 className="mt-2 text-2xl font-semibold text-stone-900">{step === "analyzing" ? "Inspecting your file" : "Building the cleaned copy"}</h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-stone-500">{step === "analyzing" ? "Classifying the file and looking for overlay-like regions. Nothing is removed automatically." : "Applying only the regions you approved and preserving the original file."}</p>
+          <Progress className="mx-auto mt-7 max-w-md" value={step === "analyzing" ? 38 : 82} />
+        </section>
       ) : null}
 
       {step === "review" && analysis ? (
@@ -226,18 +283,14 @@ export function Workspace() {
             ) : originalText ? (
               <TextDiff original={originalText} proposed={proposedText ?? originalText} />
             ) : (
-              <div className="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-stone-600">
-                Review detected overlays below. For scanned PDF pages, export the page as an image and use the image
-                editor.
-              </div>
+              <div className="stage-card rounded-3xl p-6 text-sm text-stone-600">Review detected overlays below. For scanned PDF pages, export the page as an image and use the image editor.</div>
             )}
-            {analysis.pageCount && analysis.pageCount > 1 ? (
-              <PdfCompare pageCount={analysis.pageCount} page={pdfPage} onPage={setPdfPage} />
-            ) : null}
+            {analysis.pageCount && analysis.pageCount > 1 ? <PdfCompare pageCount={analysis.pageCount} page={pdfPage} onPage={setPdfPage} /> : null}
           </div>
           <aside className="space-y-4">
-            <div className="rounded-3xl border border-stone-200 bg-white p-4">
-              <h2 className="mb-3 font-medium text-stone-900">Detected overlays</h2>
+            <div className="stage-card rounded-3xl p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Stage 2 of 3</p>
+              <h2 className="mb-4 mt-1 text-xl font-semibold text-stone-900">Review detected overlays</h2>
               <RegionList
                 regions={regions}
                 onChange={(next) => {
@@ -248,57 +301,44 @@ export function Workspace() {
                 onRemoveAll={removeAllDetected}
               />
             </div>
-            {analysis.warnings.map((warning) => (
-              <p key={warning.code} className="text-sm text-amber-800">
-                {warning.message}
-              </p>
-            ))}
-            <Button type="button" className="w-full" size="lg" onClick={clean}>
-              Clean selected
-            </Button>
-            <Button type="button" variant="ghost" className="w-full" onClick={reset}>
-              Cancel
-            </Button>
+            {analysis.warnings.map((warning) => <p key={warning.code} className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{warning.message}</p>)}
+            <Button type="button" className="w-full" size="lg" onClick={clean}>Clean selected <ArrowRight className="h-4 w-4" /></Button>
+            <Button type="button" variant="ghost" className="w-full" onClick={reset}>Cancel</Button>
           </aside>
         </section>
       ) : null}
 
       {step === "done" && result && originalUrl && resultUrl ? (
         <section className="space-y-6">
-          {result.mediaKind === "image" ? (
-            <BeforeAfterSlider beforeUrl={originalUrl} afterUrl={resultUrl} />
-          ) : result.mediaKind === "text" && originalText ? (
-            <TextDiff original={originalText} proposed={new TextDecoder().decode(result.bytes)} />
-          ) : (
-            <PdfCompare
-              pageCount={analysis?.pageCount ?? 1}
-              page={pdfPage}
-              onPage={setPdfPage}
-              beforeLabel="Original"
-              afterLabel="Cleaned"
-            />
-          )}
-          {result.warnings.map((warning) => (
-            <p key={warning.code} className="text-sm text-amber-800">
-              {warning.message}
-            </p>
-          ))}
+          <div className="stage-card rounded-3xl p-5 sm:p-6">
+            <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Complete</p>
+                <h2 className="mt-1 text-2xl font-semibold text-stone-900">Compare before exporting</h2>
+              </div>
+              <p className="text-sm text-stone-500">Your original file was not overwritten.</p>
+            </div>
+            {result.mediaKind === "image" ? (
+              <BeforeAfterSlider beforeUrl={originalUrl} afterUrl={resultUrl} />
+            ) : result.mediaKind === "text" && originalText ? (
+              <TextDiff original={originalText} proposed={new TextDecoder().decode(result.bytes)} />
+            ) : (
+              <PdfCompare pageCount={analysis?.pageCount ?? 1} page={pdfPage} onPage={setPdfPage} beforeLabel="Original" afterLabel="Cleaned" />
+            )}
+          </div>
+          {result.warnings.map((warning) => <p key={warning.code} className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{warning.message}</p>)}
           <DownloadPanel filename={result.filename} mimeType={result.mimeType} bytes={result.bytes} onReset={reset} />
         </section>
       ) : null}
 
       {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p> : null}
 
-      <footer className="flex flex-col gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-600 sm:flex-row sm:items-start sm:justify-between">
+      <footer className="flex flex-col gap-3 rounded-2xl border border-white/60 bg-white/65 px-4 py-3 text-sm text-stone-600 shadow-sm backdrop-blur sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-800" />
-          <span>
-            Your files are processed temporarily and automatically deleted. They are not used for model training.
-          </span>
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-800" />
+          <span>Your files are processed temporarily and automatically deleted. They are not used for model training.</span>
         </div>
-        <a href={GITHUB_URL} className="shrink-0 text-teal-800 underline-offset-4 hover:underline">
-          Source on GitHub
-        </a>
+        <a href={GITHUB_URL} className="shrink-0 font-medium text-emerald-800 underline-offset-4 hover:underline">Source on GitHub</a>
       </footer>
     </div>
   );
