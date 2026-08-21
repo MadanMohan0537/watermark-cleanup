@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FileText, ImageIcon, ShieldCheck, Type } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { HowItWorks } from "@/components/workspace/HowItWorks";
@@ -29,7 +29,8 @@ import {
 import type { AnalyzeResult, ClassifiedFile, DetectedRegion, ProcessResult } from "@/lib/types";
 import type { RgbaImage } from "@/lib/image-processing/buffer";
 import { AppError, isAppError } from "@/lib/errors";
-import { buildCleanupReport } from "@/lib/client/cleanup-report";
+import { buildCleanupReport, type CleanupReport } from "@/lib/client/cleanup-report";
+import { emptyMaskHistory, recordMask, redoMask as redoMaskHistory, undoMask as undoMaskHistory } from "@/lib/client/mask-history";
 
 const GITHUB_URL = "https://github.com/MadanMohan0537/watermark-cleanup";
 
@@ -46,12 +47,34 @@ export function Workspace() {
   const [mask, setMask] = useState<Uint8Array | null>(null);
   const [tool, setTool] = useState<"rect" | "brush" | "erase">("rect");
   const [result, setResult] = useState<ProcessResult | null>(null);
+  const [report, setReport] = useState<CleanupReport | undefined>();
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [pdfPage, setPdfPage] = useState(0);
   const [reviewed, setReviewed] = useState(false);
-  const [maskPast, setMaskPast] = useState<Uint8Array[]>([]);
-  const [maskFuture, setMaskFuture] = useState<Uint8Array[]>([]);
+  const [maskHistory, setMaskHistory] = useState(emptyMaskHistory);
+  const maskRef = useRef<Uint8Array | null>(null);
+  const maskHistoryRef = useRef(maskHistory);
+  const originalUrlRef = useRef<string | null>(null);
+  const resultUrlRef = useRef<string | null>(null);
+  const ingestGeneration = useRef(0);
+
+  function setCurrentMask(next: Uint8Array | null) {
+    maskRef.current = next;
+    setMask(next);
+  }
+
+  function setCurrentHistory(next: ReturnType<typeof emptyMaskHistory>) {
+    maskHistoryRef.current = next;
+    setMaskHistory(next);
+  }
+
+  function revokeUrl(ref: { current: string | null }) {
+    if (ref.current) {
+      URL.revokeObjectURL(ref.current);
+      ref.current = null;
+    }
+  }
 
   const originalText = analysis?.textPreview;
   const proposedText = useMemo(() => {
@@ -60,30 +83,39 @@ export function Workspace() {
     return applyTextRemovals(originalText, selected);
   }, [analysis?.proposedText, originalText, regions]);
 
-  async function ingestFile(file: File, permissionGranted = authorized) {
+  async function ingestFile(file: File, permissionGranted = authorized, generation?: number) {
     setError(null);
     if (!permissionGranted) {
       setError("Confirm that you own this content or have permission to modify it.");
       return;
     }
+    const requestId = generation ?? ++ingestGeneration.current;
+    if (requestId !== ingestGeneration.current) return;
     setStep("analyzing");
     try {
       const next = await fileToClassified(file);
-      setClassified(next);
-      setOriginalUrl(bytesToObjectUrl(next.bytes, next.mimeType));
       const decoded = await decodePreviewImage(next);
-      setImage(decoded);
       const nextAnalysis = await analyzeLocal(next);
+      if (requestId !== ingestGeneration.current) return;
+      revokeUrl(originalUrlRef);
+      revokeUrl(resultUrlRef);
+      const url = bytesToObjectUrl(next.bytes, next.mimeType);
+      originalUrlRef.current = url;
+      setClassified(next);
+      setOriginalUrl(url);
+      setResult(null);
+      setReport(undefined);
+      setResultUrl(null);
+      setImage(decoded);
       setAnalysis(nextAnalysis);
       setRegions(nextAnalysis.regions);
-      if (decoded) {
-        setMask(maskFromRegions(decoded, nextAnalysis.regions));
-        setMaskPast([]);
-        setMaskFuture([]);
-      }
+      setCurrentMask(decoded ? maskFromRegions(decoded, nextAnalysis.regions) : null);
+      setCurrentHistory(emptyMaskHistory());
       setReviewed(false);
+      setPdfPage(0);
       setStep("review");
     } catch (caught) {
+      if (requestId !== ingestGeneration.current) return;
       setStep("idle");
       setError(isAppError(caught) ? caught.message : "This file could not be read.");
     }
@@ -98,63 +130,65 @@ export function Workspace() {
   }
 
   async function loadAuthorizedSample(kind: "image" | "text" | "pdf") {
+    const requestId = ++ingestGeneration.current;
     setAuthorized(true);
     setError(null);
+    setStep("analyzing");
     try {
       if (kind === "image") {
         const response = await fetch("/samples/corner-overlay.png");
         if (!response.ok) throw new Error("sample missing");
         const blob = await response.blob();
-        await ingestFile(new File([blob], "authorized-sample.png", { type: "image/png" }), true);
+        await ingestFile(new File([blob], "authorized-sample.png", { type: "image/png" }), true, requestId);
         return;
       }
       if (kind === "pdf") {
         const response = await fetch("/samples/sample.pdf");
         if (!response.ok) throw new Error("sample missing");
         const blob = await response.blob();
-        await ingestFile(new File([blob], "authorized-sample.pdf", { type: "application/pdf" }), true);
+        await ingestFile(new File([blob], "authorized-sample.pdf", { type: "application/pdf" }), true, requestId);
         return;
       }
       const response = await fetch("/samples/sample.txt");
       if (!response.ok) throw new Error("sample missing");
       const text = await response.text();
-      await ingestFile(new File([text], "authorized-sample.txt", { type: "text/plain" }), true);
+      await ingestFile(new File([text], "authorized-sample.txt", { type: "text/plain" }), true, requestId);
     } catch {
+      if (requestId !== ingestGeneration.current) return;
+      setStep("idle");
       setError("The authorized sample could not be loaded.");
     }
   }
 
   function snapshotMask() {
-    if (!mask) return;
-    setMaskPast((history) => [...history.slice(-19), new Uint8Array(mask)]);
-    setMaskFuture([]);
+    const current = maskRef.current;
+    if (!current) return;
+    setCurrentHistory(recordMask(maskHistoryRef.current, current));
   }
 
   function commitMask(next: Uint8Array) {
     snapshotMask();
-    setMask(next);
+    setCurrentMask(next);
     setReviewed(true);
   }
 
-  const undoMask = useCallback(() => {
-    setMaskPast((history) => {
-      if (!history.length || !mask) return history;
-      const previous = history[history.length - 1];
-      setMaskFuture((future) => [new Uint8Array(mask), ...future].slice(0, 20));
-      setMask(previous);
-      return history.slice(0, -1);
-    });
-  }, [mask]);
+  function undoMask() {
+    const current = maskRef.current;
+    if (!current) return;
+    const next = undoMaskHistory(maskHistoryRef.current, current);
+    if (!next) return;
+    setCurrentMask(next.mask);
+    setCurrentHistory(next.history);
+  }
 
-  const redoMask = useCallback(() => {
-    setMaskFuture((future) => {
-      if (!future.length || !mask) return future;
-      const next = future[0];
-      setMaskPast((history) => [...history, new Uint8Array(mask)].slice(-20));
-      setMask(next);
-      return future.slice(1);
-    });
-  }, [mask]);
+  function redoMask() {
+    const current = maskRef.current;
+    if (!current) return;
+    const next = redoMaskHistory(maskHistoryRef.current, current);
+    if (!next) return;
+    setCurrentMask(next.mask);
+    setCurrentHistory(next.history);
+  }
 
   function removeAllDetected() {
     setReviewed(true);
@@ -177,12 +211,16 @@ export function Workspace() {
     setError(null);
     setStep("processing");
     try {
-      const next = await processLocal(classified, { ...analysis, regions }, selected, mask ?? undefined);
+      const next = await processLocal(classified, { ...analysis, regions }, selected, maskRef.current ?? undefined);
       if (!next.bytes.byteLength) {
         throw new AppError("reconstruction_failure", "Cleaning did not produce a file.");
       }
+      revokeUrl(resultUrlRef);
+      const url = bytesToObjectUrl(next.bytes, next.mimeType);
+      resultUrlRef.current = url;
       setResult(next);
-      setResultUrl(bytesToObjectUrl(next.bytes, next.mimeType));
+      setReport(buildCleanupReport(classified, analysis, next, regions));
+      setResultUrl(url);
       setStep("done");
     } catch (caught) {
       setStep("review");
@@ -191,19 +229,21 @@ export function Workspace() {
   }
 
   function reset() {
+    ingestGeneration.current += 1;
     setStep("idle");
     setClassified(null);
     setAnalysis(null);
     setRegions([]);
     setImage(null);
-    setMask(null);
+    setCurrentMask(null);
     setResult(null);
+    setReport(undefined);
     setError(null);
     setReviewed(false);
-    setMaskPast([]);
-    setMaskFuture([]);
-    if (originalUrl) URL.revokeObjectURL(originalUrl);
-    if (resultUrl) URL.revokeObjectURL(resultUrl);
+    setCurrentHistory(emptyMaskHistory());
+    setPdfPage(0);
+    revokeUrl(originalUrlRef);
+    revokeUrl(resultUrlRef);
     setOriginalUrl(null);
     setResultUrl(null);
   }
@@ -270,15 +310,21 @@ export function Workspace() {
                 onToolChange={setTool}
                 onBeginEdit={snapshotMask}
                 onMaskChange={(next) => {
-                  setMask(next);
+                  setCurrentMask(next);
                   setReviewed(true);
                 }}
-                onExpand={() => commitMask(adjustMask(mask, image.width, image.height, 1))}
-                onShrink={() => commitMask(adjustMask(mask, image.width, image.height, -1))}
+                onExpand={() => {
+                  if (!maskRef.current) return;
+                  commitMask(adjustMask(maskRef.current, image.width, image.height, 1));
+                }}
+                onShrink={() => {
+                  if (!maskRef.current) return;
+                  commitMask(adjustMask(maskRef.current, image.width, image.height, -1));
+                }}
                 onUndo={undoMask}
                 onRedo={redoMask}
-                canUndo={maskPast.length > 0}
-                canRedo={maskFuture.length > 0}
+                canUndo={maskHistory.past.length > 0}
+                canRedo={maskHistory.future.length > 0}
               />
             ) : classified?.mediaKind === "pdf" ? (
               <PdfPreview bytes={classified.bytes} pageIndex={pdfPage} />
@@ -307,8 +353,8 @@ export function Workspace() {
                 onRemoveAll={removeAllDetected}
               />
             </div>
-            {analysis.warnings.map((warning) => (
-              <p key={warning.code} className="text-sm text-amber-800">
+            {analysis.warnings.map((warning, index) => (
+              <p key={`${warning.code}-${index}`} className="text-sm text-amber-800">
                 {warning.message}
               </p>
             ))}
@@ -337,8 +383,8 @@ export function Workspace() {
               afterLabel="Cleaned"
             />
           )}
-          {result.warnings.map((warning) => (
-            <p key={warning.code} className="text-sm text-amber-800">
+          {result.warnings.map((warning, index) => (
+            <p key={`${warning.code}-${index}`} className="text-sm text-amber-800">
               {warning.message}
             </p>
           ))}
@@ -346,7 +392,7 @@ export function Workspace() {
             filename={result.filename}
             mimeType={result.mimeType}
             bytes={result.bytes}
-            report={classified && analysis ? buildCleanupReport(classified, analysis, result, regions) : undefined}
+            report={report}
             onReset={reset}
           />
         </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { Cpu, LockKeyhole, Sparkles } from "lucide-react";
 
 type Capability = {
@@ -8,6 +8,34 @@ type Capability = {
   value: string;
   detail: string;
 };
+
+const BROWSER: Capability = {
+  label: "Local engine",
+  value: "Browser",
+  detail: "Processing stays on-device whenever the selected format supports it.",
+};
+
+const WEBGPU: Capability = {
+  label: "Device capability",
+  value: "WebGPU ready",
+  detail: "This browser exposes WebGPU for future accelerated local vision modules.",
+};
+
+const WASM: Capability = {
+  label: "Device capability",
+  value: "WebAssembly ready",
+  detail: "This browser supports local WebAssembly processing.",
+};
+
+function subscribe() {
+  return () => undefined;
+}
+
+function getCapability(): Capability {
+  if (typeof navigator !== "undefined" && "gpu" in navigator) return WEBGPU;
+  if (typeof WebAssembly !== "undefined") return WASM;
+  return BROWSER;
+}
 
 function Chip({
   icon,
@@ -35,33 +63,7 @@ function Chip({
 }
 
 export function CapabilityStrip() {
-  const [capability, setCapability] = useState<Capability>({
-    label: "Local engine",
-    value: "Browser",
-    detail: "Processing stays on-device whenever the selected format supports it.",
-  });
-
-  useEffect(() => {
-    const hasWebGpu = "gpu" in navigator;
-    const hasWasm = typeof WebAssembly !== "undefined";
-
-    if (hasWebGpu) {
-      setCapability({
-        label: "Device capability",
-        value: "WebGPU ready",
-        detail: "This browser exposes WebGPU for future accelerated local vision modules.",
-      });
-      return;
-    }
-
-    if (hasWasm) {
-      setCapability({
-        label: "Device capability",
-        value: "WebAssembly ready",
-        detail: "This browser supports local WebAssembly processing.",
-      });
-    }
-  }, []);
+  const capability = useSyncExternalStore(subscribe, getCapability, () => BROWSER);
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">

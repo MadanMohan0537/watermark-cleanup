@@ -36,7 +36,10 @@ export async function decodePreviewImage(file: ClassifiedFile): Promise<RgbaImag
 
 export async function analyzeLocal(file: ClassifiedFile): Promise<AnalyzeResult> {
   if (file.mediaKind === "image") {
-    const image = (await decodePreviewImage(file))!;
+    const image = await decodePreviewImage(file);
+    if (!image) {
+      throw new Error("Could not decode image");
+    }
     const regions = collectCandidates(image);
     return {
       jobId: file.id,
@@ -84,7 +87,10 @@ export async function processLocal(
   mask?: Uint8Array,
 ): Promise<ProcessResult> {
   if (file.mediaKind === "image") {
-    const image = (await decodePreviewImage(file))!;
+    const image = await decodePreviewImage(file);
+    if (!image) {
+      throw new Error("Could not decode image");
+    }
     const selected = analysis.regions.map((region) => ({
       ...region,
       action: regionIds.includes(region.id) ? ("remove" as const) : ("keep" as const),
