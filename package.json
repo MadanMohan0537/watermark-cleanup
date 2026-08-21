@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "opennextjs-cloudflare build",
+    "build": "opennextjs-cloudflare build && npm run verify:worker",
     "build:next": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -32,10 +32,11 @@
     "test:watch": "vitest",
     "generate:fixtures": "node scripts/generate-fixtures.mjs",
     "generate:assets": "node scripts/generate-public-assets.mjs",
-    "build:cloudflare": "opennextjs-cloudflare build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "verify:worker": "node -e \"require('fs').accessSync('.open-next/worker.js'); console.log('Verified .open-next/worker.js')\"",
+    "build:cloudflare": "npm run build",
+    "preview": "npm run build && opennextjs-cloudflare preview",
+    "deploy": "npm run build && opennextjs-cloudflare deploy",
+    "upload": "npm run build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
