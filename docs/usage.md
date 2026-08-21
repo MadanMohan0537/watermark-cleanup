@@ -10,12 +10,12 @@ The main path processes files in the browser. The original file on disk is never
 
 ## Fastest path: authorized samples
 
-The home screen includes two project-owned examples:
+The home screen includes project-owned examples:
 
 1. Click **Sample image** to load a generated landscape with a corner overlay.
 2. Review the detected region. Keep it or paint a different mask if needed.
 3. Click **Clean selected**, compare the before/after slider, then download.
-4. Click **Start over** and try **Sample text** to see repeated-header detection and a side-by-side text diff.
+4. Click **Start over**. You can also try **Sample text**, or confirm permission, open **Paste text**, and click **Load demo**.
 
 Samples skip a separate file picker because they ship with the repository. Your own uploads still require the ownership checkbox.
 
