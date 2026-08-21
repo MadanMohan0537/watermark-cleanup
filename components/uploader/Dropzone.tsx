@@ -1,9 +1,23 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ClipboardPaste, FileUp } from "lucide-react";
+import { ClipboardPaste, FileUp, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+const DEMO_TEXT = `ACME PRODUCT BRIEF
+
+CONFIDENTIAL DRAFT
+
+Watermark Cleanup is a privacy-first utility for reviewing and removing unwanted overlays from files you own or are authorized to edit.
+
+The workflow keeps the user in control: upload or paste content, inspect detected overlay candidates, choose what to keep or remove, compare the result, and export a cleaned copy.
+
+CONFIDENTIAL DRAFT
+
+This sample is included only to demonstrate repeated-text detection without requiring a personal file.
+
+CONFIDENTIAL DRAFT`;
 
 export function Dropzone({
   disabled,
@@ -25,6 +39,11 @@ export function Dropzone({
     },
     [onFile],
   );
+
+  function loadDemo() {
+    setMode("paste");
+    setText(DEMO_TEXT);
+  }
 
   return (
     <section className="rounded-3xl border border-stone-200 bg-white/80 p-3 shadow-sm">
@@ -98,10 +117,20 @@ export function Dropzone({
             if (text.trim()) onText(text);
           }}
         >
-          <label htmlFor="pasted-text" className="text-sm font-medium text-stone-900">
-            Paste the text from your document
-          </label>
-          <p className="mt-1 text-sm text-stone-500">You will be able to review detected text before downloading the cleaned document.</p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <label htmlFor="pasted-text" className="text-sm font-medium text-stone-900">
+                Paste the text from your document
+              </label>
+              <p className="mt-1 text-sm text-stone-500">
+                Review detected text before downloading the cleaned document.
+              </p>
+            </div>
+            <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={loadDemo}>
+              <Sparkles className="h-4 w-4" />
+              Load demo
+            </Button>
+          </div>
           <textarea
             id="pasted-text"
             value={text}
@@ -119,7 +148,18 @@ export function Dropzone({
           </div>
         </form>
       )}
+
+      <div className="flex flex-wrap items-center justify-center gap-2 px-3 py-3 text-xs text-stone-500">
+        <span>Want to explore without uploading a file?</span>
+        <button
+          type="button"
+          disabled={disabled}
+          className="font-medium text-teal-800 underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={loadDemo}
+        >
+          Load the built-in demo text
+        </button>
+      </div>
     </section>
   );
 }
-
