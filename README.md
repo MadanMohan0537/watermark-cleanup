@@ -3,177 +3,213 @@
 [![CI](https://github.com/MadanMohan0537/watermark-cleanup/actions/workflows/ci.yml/badge.svg)](https://github.com/MadanMohan0537/watermark-cleanup/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020)
 
-A privacy-first watermark and overlay cleanup workspace for images, PDFs, and text documents. Upload content you own or are authorized to edit, inspect detected overlay candidates, choose exactly what should be removed, compare the result, and export a cleaned copy.
+A privacy-first, human-in-the-loop workspace for reviewing and cleaning unwanted overlay-like content from **images, PDFs, and text documents that you own or are authorized to edit**.
 
-**Live demo:** https://watermark-cleanup.madanmohanlearning.workers.dev/
+Instead of treating cleanup as a black box, Watermark Cleanup exposes the detection step, lets the user decide what should stay or be removed, supports manual mask refinement, compares the result, and exports both the cleaned file and an optional processing report.
+
+### Live application
+
+**https://watermark-cleanup.madanmohanlearning.workers.dev/**
 
 ![Watermark Cleanup home screen](docs/screenshots/app-home.png)
 
-## Project highlights
+---
 
-- Premium portfolio-focused deployment with a guided demo experience.
-- Privacy-first local/browser processing whenever possible.
-- Human-in-the-loop review instead of automatic destructive removal.
-- Live browser capability indicator for WebGPU / WebAssembly readiness.
-- Image, PDF, TXT, Markdown, and browser-side WEBP support.
-- Built-in sample image, sample PDF, sample text, and paste-text demo so reviewers can try the flow without a personal file.
-- Magic-byte file classification instead of trusting extensions alone.
-- Heuristic overlay detection with confidence-scored Keep / Remove review.
-- Rectangle, brush, erase, expand, shrink, undo, and redo mask tools, with keyboard shortcuts `R`, `B`, `E`, and `Ctrl/Cmd+Z`.
-- Downloadable cleanup report describing kept and removed regions.
-- Before/after comparison for cleaned images.
-- Text-aware PDF cleanup when supported.
+## Why this project exists
+
+Most cleanup tools optimize for one-click removal. That is convenient, but it can also be destructive: false detections may erase valid content, users often cannot see what changed, and files may be sent to a remote service unnecessarily.
+
+Watermark Cleanup takes a different approach:
+
+- **Review before removal** — detections are proposals, not automatic deletions.
+- **Local-first processing** — supported workflows stay in the browser whenever possible.
+- **Least-destructive cleanup** — only confirmed regions are reconstructed or removed.
+- **User control** — detected regions can be kept, removed, painted, erased, expanded, shrunk, undone, or redone.
+- **Transparent output** — users can compare the original and processed result before downloading.
+- **Traceable processing** — an optional JSON cleanup report records what the workflow detected and acted on.
+
+## Product highlights
+
+- Polished, guided portfolio/demo experience.
+- PNG, JPG/JPEG, WEBP, PDF, TXT, and Markdown workflows.
+- Authorized built-in sample image, PDF, and text files for instant testing.
+- Paste-text mode for trying the document workflow without uploading a file.
+- Magic-byte/file-content classification instead of trusting extensions alone.
+- Heuristic overlay detection with confidence-scored **Keep / Remove** review.
+- Rectangle, brush, and erase mask tools.
+- Expand/shrink mask refinement.
+- Mask **undo / redo** with keyboard support.
+- Before/after image comparison.
+- PDF page review and supported text-overlay cleanup.
 - Side-by-side text diff before export.
+- Downloadable cleanup report.
+- Browser capability indicator for WebGPU / WebAssembly readiness.
 - Cloudflare Workers deployment through OpenNext.
-- Automatic production deploys from `master` via Cloudflare Workers Builds.
-- Automated CI for tests, linting, type checking, and production builds on Node.js 24.
+- GitHub Actions CI for tests, linting, type checking, and production builds.
 
-## Why this project
+> **WebGPU note:** the capability indicator reports whether the browser exposes WebGPU. The current cleanup pipeline does not claim GPU-accelerated reconstruction yet.
 
-Many cleanup tools behave like black boxes: users upload a file, the service edits it aggressively, and there is little visibility into what was detected or changed. This project takes a more controlled approach.
+---
 
-1. **Review before removal** — detections are suggestions, not automatic deletions.
-2. **Least-destructive editing** — only confirmed regions are reconstructed or removed.
-3. **Privacy by default** — the main processing path stays on the device whenever possible.
-4. **Transparent output** — users can compare the original and processed result before downloading.
+## Demo flow
 
-## How it works
+The fastest way to evaluate the project is through the built-in samples.
+
+1. Open the [live application](https://watermark-cleanup.madanmohanlearning.workers.dev/).
+2. Choose **Try sample image**, **Try sample PDF**, or one of the sample controls in the workspace.
+3. Inspect the detected overlay candidates.
+4. Mark regions as **Keep** or **Remove**.
+5. For images, refine the mask with rectangle, brush, erase, expand, shrink, undo, or redo.
+6. Run the cleanup.
+7. Compare the original and cleaned result.
+8. Download the cleaned file and, when available, the processing report.
+
+This makes the project reviewable without requiring a recruiter, developer, or tester to prepare their own input file first.
+
+---
+
+## How the pipeline works
 
 ```text
-Upload, paste, or load a sample
-             ↓
-Validate and classify input
-             ↓
-Detect likely overlay regions
-             ↓
-Review, keep, remove, or edit masks
-             ↓
-Apply the least-destructive cleanup path
-             ↓
-Compare original and cleaned result
-             ↓
-Export the cleaned file + optional report
+Upload / paste / sample
+          │
+          ▼
+Validate + classify input
+          │
+          ▼
+Analyze likely overlay regions
+          │
+          ▼
+Human review: Keep / Remove
+          │
+          ▼
+Optional manual mask editing
+          │
+          ▼
+Least-destructive cleanup
+          │
+          ▼
+Before / after comparison
+          │
+          ▼
+Clean file + optional JSON report
 ```
 
-## Detection pipeline
+### 1. Input validation and classification
 
-### Images
+The application classifies files from their contents instead of relying only on the filename extension. This reduces accidental MIME/extension mismatches and gives the processing layer a consistent media type.
 
-The image detector scores overlay-like regions using signals such as:
+### 2. Detection
 
-- alpha/transparency
-- corner and edge contrast
+#### Images
+
+The detector scores overlay-like areas using signals including:
+
+- alpha/transparency behavior
 - luminance changes
+- corner and edge contrast
 - compact overlay geometry
-- repeated/tiled visual patterns
+- repeated or tiled visual patterns
 
-### PDFs and text
+The goal is to surface likely candidates for review rather than silently delete pixels.
 
-PDF and text analysis looks for repeated, rotated, translucent, or overlay-like strings. The detector is intentionally conservative so normal body content is not silently removed.
+#### PDFs and text
 
-## Cleanup pipeline
+PDF/text analysis looks for repeated, rotated, translucent, or overlay-like strings. The implementation is intentionally conservative to reduce false positives on normal document content.
 
-The processor chooses the least destructive available operation:
+### 3. Cleanup
 
-1. Reverse a uniform translucent overlay when the model fits.
-2. Otherwise reconstruct only the selected image mask using local inpainting.
-3. For PDFs, remove confirmed overlay text from page content when possible.
-4. For text, generate a proposed cleaned version and show the diff before export.
+The processor chooses the least destructive available operation for the selected media type:
+
+1. Reverse a uniform translucent overlay when the detected model is suitable.
+2. Otherwise reconstruct only the confirmed image mask with local inpainting.
+3. For supported PDFs, remove confirmed overlay text from page content.
+4. For text documents, generate a proposed cleaned version and show the diff before export.
+
+---
 
 ## Supported formats
 
-| Input | Current behavior |
+| Format | Current workflow |
 | --- | --- |
-| PNG | Detect, review, mask-edit, clean, export |
-| JPG / JPEG | Detect, review, mask-edit, clean, export |
-| WEBP | Browser-side cleanup |
-| PDF | Review and clean supported overlays |
-| TXT | Detect repeated overlay-like text and export cleaned text |
-| Markdown | Detect repeated overlay-like text and export cleaned text |
+| PNG | Detect → review → mask edit → clean → compare → export |
+| JPG / JPEG | Detect → review → mask edit → clean → compare → export |
+| WEBP | Browser-side cleanup workflow |
+| PDF | Inspect pages → review supported overlays → clean → export |
+| TXT | Detect repeated overlay-like text → review → diff → export |
+| Markdown | Detect repeated overlay-like text → review → diff → export |
 
-Video can be classified by the processor registry, but video watermark cleanup is not implemented yet.
+Video files can be recognized by the processor architecture, but video cleanup is **not implemented**.
 
-## Quick demo
-
-1. Open the [live deployment](https://watermark-cleanup.madanmohanlearning.workers.dev/).
-2. Click **Try sample image** or **Try sample PDF** in the hero, or use the sample controls in the workspace.
-3. Review the detected overlay candidates.
-4. Choose what to keep or remove. For images you can paint, erase, undo, or redo mask edits.
-5. Compare the result, export the clean copy, and optionally download the cleanup report.
-
-The landing page also reports whether the current browser exposes WebGPU or WebAssembly. This is a capability signal for future local acceleration; the current cleanup pipeline does not claim GPU acceleration.
+---
 
 ## Tech stack
 
-| Layer | Technology |
+| Area | Technology |
 | --- | --- |
-| Application | Next.js 16, React 19, TypeScript |
-| Styling / UI | Tailwind CSS, Radix UI, Lucide React |
+| Framework | Next.js 16 |
+| UI runtime | React 19 |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| UI primitives | Radix UI |
+| Icons | Lucide React |
 | Image processing | `fast-png`, `jpeg-js`, local pixel/mask pipeline |
 | PDF processing | `pdf-lib`, `pdfjs-dist` |
 | Validation | Zod |
 | Testing | Vitest |
-| CI | GitHub Actions on Node.js 24 |
-| Deployment | Cloudflare Workers via `@opennextjs/cloudflare` |
+| CI | GitHub Actions, Node.js 24 |
+| Edge deployment | Cloudflare Workers + `@opennextjs/cloudflare` |
 
-## Project structure
+---
+
+## Architecture
 
 ```text
-app/                  Next.js pages and API routes
+app/
+├── page.tsx                  Application entry
+└── api/                      Optional server-side API routes
+
 components/
-  comparison/         Before/after and diff views
-  editor/             Region review and manual mask tools
-  layout/             Site header and navigation
-  results/            Export/download UI
-  uploader/           Authorization and input flow
-  workspace/          Main application workflow and capability UI
+├── comparison/              Before/after and diff views
+├── editor/                  Detection review and mask editor
+├── layout/                  Header/navigation
+├── results/                 Download/export UI
+├── uploader/                Authorization and input flows
+└── workspace/               Main client workflow and capability UI
+
 lib/
-  client/             Browser-side orchestration and cleanup report
-  detection/          Overlay detection logic
-  image-processing/   Image reconstruction and masks
-  pdf-processing/     PDF analysis and cleanup
-  processors/         Processor registry
-  security/           Input/security helpers
-  storage/            Temporary storage abstraction
-  text-processing/    Text detection and cleanup
-public/samples/       Authorized demo files used by the live app
-fixtures/             Authorized test fixtures
-docs/                 Architecture, usage, API, and deployment notes
-scripts/              Fixture and public-asset generation
-.github/              CI, issue templates, and pull request template
+├── client/                  Browser orchestration + cleanup report
+├── detection/               Overlay detection logic
+├── image-processing/        Pixel buffers, masks, reconstruction
+├── pdf-processing/          PDF analysis and cleanup
+├── processors/              Media processor registry
+├── security/                Input/security helpers
+├── storage/                 Temporary storage abstraction
+└── text-processing/         Text detection and cleanup
+
+public/samples/              Authorized demo assets
+fixtures/                    Authorized test fixtures
+docs/                        Architecture, API, usage, deployment docs
+scripts/                     Fixture/public asset generation
+.github/                     CI and repository templates
 ```
 
-## Documentation
+For a deeper implementation overview, see [docs/architecture.md](docs/architecture.md).
 
-| Document | What it covers |
-| --- | --- |
-| [docs/usage.md](docs/usage.md) | End-user walkthrough |
-| [docs/architecture.md](docs/architecture.md) | Detection and cleanup pipeline |
-| [docs/api.md](docs/api.md) | Optional server API |
-| [docs/deployment.md](docs/deployment.md) | Cloudflare Workers / OpenNext |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to propose changes |
-| [SECURITY.md](SECURITY.md) | Vulnerability reporting |
-
-## Privacy and responsible use
-
-- Browser/local processing is the default path.
-- Originals are not used for model training.
-- The original file is never modified in place.
-- Temporary server-side files, when used, are addressed through random IDs and expire after 30 minutes.
-- Users must confirm ownership or permission before processing their own files.
-- Built-in samples are project-owned fixtures created for this repository.
-
-Use this project only for content you own or are authorized to modify. It is not intended to remove copyright notices, signatures, authenticity marks, licenses, or ownership identifiers from third-party material.
+---
 
 ## Local development
 
 ### Requirements
 
-- Node.js 24+
+- Node.js **24+**
 - npm
+
+### Setup
 
 ```bash
 git clone https://github.com/MadanMohan0537/watermark-cleanup.git
@@ -184,11 +220,32 @@ npm run generate:assets
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open:
 
-On the home screen you can upload a file after confirming permission, try the authorized samples, or use the paste-text flow.
+```text
+http://localhost:3000
+```
 
-## Quality checks
+### Useful commands
+
+```bash
+npm run dev              # Next.js development server
+npm run test             # Vitest suite
+npm run lint             # ESLint
+npm run typecheck        # TypeScript validation
+npm run build:next       # Plain Next.js production build
+npm run build            # OpenNext Cloudflare Worker build
+npm run preview          # Build and preview the Worker locally
+npm run deploy           # Build and deploy through OpenNext
+```
+
+---
+
+## Testing and quality gates
+
+The repository includes automated tests for core processing behavior, including file classification, image detection, false-positive cases, image reconstruction, PDF processing, and text processing.
+
+Before merging changes, run:
 
 ```bash
 npm test
@@ -197,53 +254,127 @@ npm run typecheck
 npm run build
 ```
 
-GitHub Actions runs these checks on pull requests and pushes to `master`. Authorized test files are stored under `fixtures/authorized`.
+GitHub Actions performs the same quality checks for pull requests and pushes to `master`.
+
+---
 
 ## Cloudflare Workers deployment
 
-Pushes to `master` are built and published automatically by **Cloudflare Workers Builds**.
+The app is deployed as a Next.js application on **Cloudflare Workers** through OpenNext.
 
-**Live URL:** https://watermark-cleanup.madanmohanlearning.workers.dev/
+### Production URL
 
-The connected Worker uses these dashboard commands:
+**https://watermark-cleanup.madanmohanlearning.workers.dev/**
+
+### Important build detail
+
+`wrangler.jsonc` uses the generated OpenNext entry point:
+
+```text
+.open-next/worker.js
+```
+
+Therefore the deployment pipeline must run an **OpenNext build**, not only `next build`.
+
+The repository is configured so:
+
+```bash
+npm run build
+```
+
+runs:
+
+```bash
+opennextjs-cloudflare build
+```
+
+and generates `.open-next/worker.js` before Wrangler uploads the Worker.
+
+For the plain Next.js build, use:
+
+```bash
+npm run build:next
+```
+
+A direct deployment can be run with:
+
+```bash
+npm run deploy
+```
+
+For Cloudflare Workers Builds, a compatible setup is:
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npx @opennextjs/cloudflare build` |
-| Deploy command | `npx @opennextjs/cloudflare deploy` |
-| Root directory | `/` |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler versions upload` |
+| Worker entry point | `.open-next/worker.js` |
+| Assets | `.open-next/assets` |
 
-`npm run build:cloudflare` is the same OpenNext build as the dashboard command. A standard `npm run build` creates Next.js `.next` output only and is not enough for Workers.
+See [docs/deployment.md](docs/deployment.md) for additional deployment notes.
 
-See [docs/deployment.md](docs/deployment.md) for local deploy notes.
+---
+
+## Privacy and responsible use
+
+This project is deliberately designed around authorized content and user review.
+
+- Process only files you own or are authorized to modify.
+- The browser/local workflow is preferred whenever the format supports it.
+- Original files are not modified in place.
+- Files are not used for model training.
+- Temporary server-side objects, when used, are addressed through randomized identifiers and expire automatically.
+- Built-in samples are project-owned fixtures created specifically for testing and demonstration.
+
+This project is **not intended to remove copyright notices, signatures, authenticity marks, licenses, or ownership identifiers from third-party material**.
+
+---
 
 ## Current limitations
 
-- Overlay detection is heuristic and can miss subtle or heavily blended marks.
-- Complex photographic reconstruction can leave visible seams.
+- Detection is heuristic and can miss subtle or heavily blended overlays.
+- Complex photographic reconstruction can leave visible seams or texture artifacts.
 - Encrypted PDFs are rejected.
-- Server-side WEBP decoding is not supported; the browser path should be used.
-- OCR and OpenCV.js integrations are extension points rather than required dependencies.
-- The WebGPU badge reports browser capability only; GPU-accelerated cleanup is not wired into the current processing path.
-- Video cleanup is not implemented yet.
+- Server-side WEBP decoding is not part of the current backend path.
+- OCR-assisted scanned-document detection is not yet integrated.
+- WebGPU is reported as a browser capability only; the processing pipeline currently uses the existing CPU/browser implementation.
+- Video cleanup is not implemented.
 
-## Viable next additions
+---
 
-The strongest future improvements are:
+## Roadmap
 
-- batch processing with per-file review
-- OCR-assisted text-mask detection for scanned documents
-- optional WebGPU-accelerated local vision modules with CPU/WebAssembly fallback
-- richer processing telemetry and per-stage performance measurements
-- video-frame cleanup for authorized footage with temporal consistency
+High-value additions that fit the current architecture:
+
+- **Batch workspace** — process multiple authorized files with independent review states.
+- **OCR-assisted document detection** — improve overlay detection on scanned PDFs and image-based documents.
+- **Processing telemetry** — show per-stage timings, resolution, mask size, and selected cleanup path.
+- **WebGPU acceleration** — optional local vision/reconstruction modules with WebAssembly/CPU fallback.
+- **Improved reconstruction** — stronger texture-aware inpainting for complex backgrounds.
+- **Video workflow** — frame-aware cleanup for authorized footage with temporal consistency.
+
+---
+
+## Documentation
+
+| Document | Description |
+| --- | --- |
+| [Usage guide](docs/usage.md) | End-user workflow |
+| [Architecture](docs/architecture.md) | Detection and processing design |
+| [API](docs/api.md) | Optional server API |
+| [Deployment](docs/deployment.md) | Cloudflare/OpenNext deployment |
+| [Contributing](CONTRIBUTING.md) | Contribution guidelines |
+| [Security](SECURITY.md) | Security reporting |
+
+---
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and include tests for changes to detection or cleanup behavior where applicable.
 
 ## Security
 
-See [SECURITY.md](SECURITY.md) for security-reporting guidance.
+Please report security issues using the process documented in [SECURITY.md](SECURITY.md).
 
 ## License
 
