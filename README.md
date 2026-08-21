@@ -12,8 +12,6 @@ A privacy-first watermark and overlay cleanup tool for images, PDFs, and text do
 
 **Deployment:** https://watermark-cleanup.madanmohanlearning.workers.dev/
 
-**Repository:** https://github.com/MadanMohan0537/watermark-cleanup
-
 The app also includes a built-in text demo, so reviewers can explore the detection and review workflow without uploading a personal file.
 
 ## Project highlights
