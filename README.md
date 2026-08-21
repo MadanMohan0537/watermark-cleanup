@@ -20,11 +20,13 @@ A privacy-first watermark and overlay cleanup tool for images, PDFs, and text do
 - Built-in sample image, sample text, and paste-text demo so reviewers can try the flow without a personal file.
 - Magic-byte file classification instead of trusting extensions alone.
 - Heuristic overlay detection with confidence-scored Keep / Remove review.
-- Rectangle, brush, erase, expand, and shrink mask tools, with keyboard shortcuts `R`, `B`, and `E`.
+- Rectangle, brush, erase, expand, shrink, undo, and redo mask tools, with keyboard shortcuts `R`, `B`, `E`, and `Ctrl/Cmd+Z`.
+- Downloadable cleanup report describing kept and removed regions.
 - Before/after comparison for cleaned images.
 - Text-aware PDF cleanup when supported.
 - Side-by-side text diff before export.
 - Cloudflare Workers deployment through OpenNext.
+- Automatic production deploys from `master` via Cloudflare Workers Builds.
 - Automated CI for tests, linting, type checking, and production builds.
 
 ## Why this project
@@ -197,24 +199,21 @@ GitHub Actions runs these checks on pull requests and pushes to `master`. Author
 
 ## Cloudflare Workers deployment
 
-The application is configured for Cloudflare Workers using `@opennextjs/cloudflare`.
+Pushes to `master` are built and published automatically by **Cloudflare Workers Builds**.
 
-```bash
-npx wrangler login
-npm run deploy
-```
+**Live URL:** https://watermark-cleanup.madanmohanlearning.workers.dev/
 
-For Git-connected Workers Builds:
+The connected Worker uses these dashboard commands:
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npm run build:cloudflare` |
-| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Build command | `npx @opennextjs/cloudflare build` |
+| Deploy command | `npx @opennextjs/cloudflare deploy` |
 | Root directory | `/` |
 
-A standard `npm run build` creates the Next.js `.next` output but does not produce the `.open-next` Worker artifact required for deployment.
+`npm run build:cloudflare` is the same OpenNext build as the dashboard command. A standard `npm run build` creates Next.js `.next` output only and is not enough for Workers.
 
-See [docs/deployment.md](docs/deployment.md) for the full deployment notes.
+See [docs/deployment.md](docs/deployment.md) for local deploy notes.
 
 ## Current limitations
 
@@ -232,8 +231,6 @@ The strongest future improvements would be:
 - batch processing with per-file review
 - OCR-assisted text-mask detection for scanned documents
 - optional local-only mode indicator with clearer processing telemetry
-- undo/redo for manual mask edits
-- downloadable processing report describing detected and removed regions
 - video-frame cleanup with temporal consistency
 
 ## Contributing

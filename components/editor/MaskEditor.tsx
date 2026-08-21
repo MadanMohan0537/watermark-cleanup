@@ -15,8 +15,13 @@ export function MaskEditor({
   tool,
   onToolChange,
   onMaskChange,
+  onBeginEdit,
   onExpand,
   onShrink,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }: {
   imageUrl: string;
   width: number;
@@ -26,8 +31,13 @@ export function MaskEditor({
   tool: Tool;
   onToolChange: (tool: Tool) => void;
   onMaskChange: (mask: Uint8Array) => void;
+  onBeginEdit: () => void;
   onExpand: () => void;
   onShrink: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
@@ -40,10 +50,19 @@ export function MaskEditor({
       if (event.key === "r" || event.key === "R") onToolChange("rect");
       if (event.key === "b" || event.key === "B") onToolChange("brush");
       if (event.key === "e" || event.key === "E") onToolChange("erase");
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        if (event.shiftKey) onRedo();
+        else onUndo();
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        onRedo();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onToolChange]);
+  }, [onToolChange, onUndo, onRedo]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -116,6 +135,12 @@ export function MaskEditor({
         <Button type="button" size="sm" variant="outline" onClick={onShrink}>
           Shrink
         </Button>
+        <Button type="button" size="sm" variant="outline" disabled={!canUndo} onClick={onUndo}>
+          Undo
+        </Button>
+        <Button type="button" size="sm" variant="outline" disabled={!canRedo} onClick={onRedo}>
+          Redo
+        </Button>
       </div>
       <canvas
         ref={canvasRef}
@@ -125,6 +150,7 @@ export function MaskEditor({
         onPointerDown={(event) => {
           drawing.current = true;
           start.current = pointFromEvent(event);
+          onBeginEdit();
           (event.target as HTMLCanvasElement).setPointerCapture(event.pointerId);
           if (tool !== "rect") {
             const next = new Uint8Array(mask);

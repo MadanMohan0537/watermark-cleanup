@@ -2,13 +2,25 @@
 
 ## Production deployment
 
-The public deployment is hosted on Cloudflare Workers:
+The public app is hosted on Cloudflare Workers:
 
 **https://watermark-cleanup.madanmohanlearning.workers.dev/**
 
-## Cloudflare Workers
+Git-connected **Workers Builds** publishes `master` automatically. A successful production build uses:
 
-This app uses `@opennextjs/cloudflare`.
+| Setting | Value |
+| --- | --- |
+| Build command | `npx @opennextjs/cloudflare build` |
+| Deploy command | `npx @opennextjs/cloudflare deploy` |
+| Root directory | `/` |
+
+Those commands are equivalent to `npm run build:cloudflare` followed by `npx @opennextjs/cloudflare deploy`.
+
+Do not set the Workers build command to `npm run build`. That only creates Next.js `.next` output. OpenNext also has to emit the `.open-next` Worker artifact that the deploy step publishes.
+
+## Manual deploy
+
+Use this path when you need to publish from a local machine:
 
 ```bash
 npm install
@@ -17,7 +29,7 @@ npx wrangler login
 npm run deploy
 ```
 
-`npm run deploy` builds with OpenNext and publishes the Worker. After the first deploy, bind a custom domain in the Cloudflare dashboard or attach a `workers.dev` domain.
+`npm run deploy` builds with OpenNext and publishes the Worker named `watermark-cleanup` in `wrangler.jsonc`.
 
 Preview the Worker runtime locally:
 
@@ -34,25 +46,6 @@ npm run preview
 
 ## GitHub / CI
 
-For a repository connected to **Workers Builds**, set the dashboard fields to these exact values:
+GitHub Actions (`.github/workflows/ci.yml`) runs tests, lint, typecheck, and `npm run build` on every push and pull request. It does not deploy.
 
-| Setting | Value |
-| --- | --- |
-| Build command | `npm run build:cloudflare` |
-| Deploy command | `npx opennextjs-cloudflare deploy` |
-| Root directory | `/` |
-
-Do not use `npm run build` as the Workers build command. That command only creates Next.js' `.next` output. The Cloudflare build command above also converts it into the `.open-next` Worker artifact required by the deploy step.
-
-The equivalent CI sequence is:
-
-```bash
-npm ci
-npm test
-npm run lint
-npm run typecheck
-npm run build:cloudflare
-npx opennextjs-cloudflare deploy
-```
-
-If a previous build failed with `Could not find compiled Open Next config`, update the two dashboard command fields and retry the deployment. The normal Next.js warning about a missing build cache affects build speed only and is not a deployment failure.
+Production deploys come from Cloudflare Workers Builds after a green OpenNext build of `master`. If a previous build failed with `Could not find compiled Open Next config`, confirm the dashboard still uses the OpenNext build/deploy commands above rather than `npm run build` / `npx wrangler versions upload`.

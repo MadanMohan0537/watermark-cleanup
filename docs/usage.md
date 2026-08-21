@@ -15,7 +15,7 @@ The home screen includes project-owned examples:
 1. Click **Sample image** to load a generated landscape with a corner overlay.
 2. Review the detected region. Keep it or paint a different mask if needed.
 3. Click **Clean selected**, compare the before/after slider, then download.
-4. Click **Start over**. You can also try **Sample text**, or confirm permission, open **Paste text**, and click **Load demo**.
+4. Click **Start over**. You can also try **Sample PDF**, **Sample text**, or confirm permission, open **Paste text**, and click **Load demo**.
 
 Samples skip a separate file picker because they ship with the repository. Your own uploads still require the ownership checkbox.
 
@@ -30,9 +30,10 @@ Samples skip a separate file picker because they ship with the repository. Your 
    - **Brush (B)** to paint extra pixels
    - **Erase (E)** to subtract from the mask
    - **Expand** / **Shrink** to grow or contract the current mask
+   - **Undo** / **Redo** (`Ctrl/Cmd+Z`) if a mask edit went too far
 6. Click **Clean selected**.
 7. Inspect the before/after comparison. If reconstruction is incomplete, a warning is shown.
-8. Download the cleaned file.
+8. Download the cleaned file. Optionally download `cleanup-report.json` for a record of kept and removed regions.
 
 WEBP is decoded in the browser. Prefer the web app over the optional server API for WEBP files.
 
@@ -40,7 +41,7 @@ WEBP is decoded in the browser. Prefer the web app over the optional server API 
 
 1. Confirm ownership and upload a PDF.
 2. Review overlay-like text detections. Encrypted PDFs are rejected.
-3. Keep body content. Remove only confirmed overlay strings.
+3. Keep body content. Remove only confirmed overlay strings. You can also click **Sample PDF** to try an authorized two-page overlay document.
 4. Use the page control when the document has more than one page.
 5. Export a cleaned PDF. Scanned pages without selectable text should be exported as images and cleaned with the image editor.
 

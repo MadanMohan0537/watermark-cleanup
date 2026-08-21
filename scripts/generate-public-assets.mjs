@@ -102,6 +102,11 @@ const iconPng = create(180, 180, (data, width, height) => {
 });
 writeFileSync(join(publicDir, "apple-touch-icon.png"), iconPng);
 
+const samplePdf = join(fixturesDir, "sample.pdf");
+if (existsSync(samplePdf)) {
+  copyFileSync(samplePdf, join(samplesDir, "sample.pdf"));
+}
+
 const sampleTxt = join(fixturesDir, "sample.txt");
 if (existsSync(sampleTxt)) {
   copyFileSync(sampleTxt, join(samplesDir, "sample.txt"));

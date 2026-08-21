@@ -9,7 +9,7 @@ const steps = [
   },
   {
     title: "Review detections",
-    body: "Keep or remove each overlay. For images you can also paint, erase, expand, or shrink the mask.",
+    body: "Keep or remove each overlay. For images you can paint, erase, expand, shrink, undo, or redo the mask.",
   },
   {
     title: "Export a clean copy",
