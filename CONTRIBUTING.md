@@ -10,11 +10,14 @@ A privacy-first utility for people who own a file or have permission to edit it.
 
 ```bash
 npm install
+npm run generate:fixtures
+npm run generate:assets
 npm run dev
-npm test
-npm run lint
-npm run typecheck
 ```
+
+Then run `npm test`, `npm run lint`, and `npm run typecheck` before opening a pull request.
+
+Authorized demo files live in `public/samples` and `fixtures/authorized`. Do not add media you do not own.
 
 ## Guidelines
 

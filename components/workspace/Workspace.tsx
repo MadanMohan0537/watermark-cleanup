@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ImageIcon, ShieldCheck, Type } from "lucide-react";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { HowItWorks } from "@/components/workspace/HowItWorks";
 import { AuthorizationGate } from "@/components/uploader/AuthorizationGate";
 import { Dropzone } from "@/components/uploader/Dropzone";
 import { RegionList } from "@/components/editor/RegionList";
@@ -26,6 +28,8 @@ import {
 import type { AnalyzeResult, ClassifiedFile, DetectedRegion, ProcessResult } from "@/lib/types";
 import type { RgbaImage } from "@/lib/image-processing/buffer";
 import { AppError, isAppError } from "@/lib/errors";
+
+const GITHUB_URL = "https://github.com/MadanMohan0537/watermark-cleanup";
 
 type Step = "idle" | "analyzing" | "review" | "processing" | "done";
 
@@ -52,9 +56,9 @@ export function Workspace() {
     return applyTextRemovals(originalText, selected);
   }, [analysis?.proposedText, originalText, regions]);
 
-  async function onFile(file: File) {
+  async function ingestFile(file: File, permissionGranted = authorized) {
     setError(null);
-    if (!authorized) {
+    if (!permissionGranted) {
       setError("Confirm that you own this content or have permission to modify it.");
       return;
     }
@@ -77,8 +81,32 @@ export function Workspace() {
     }
   }
 
+  function onFile(file: File) {
+    void ingestFile(file);
+  }
+
   function onText(text: string) {
-    void onFile(new File([text], "pasted-text.txt", { type: "text/plain" }));
+    void ingestFile(new File([text], "pasted-text.txt", { type: "text/plain" }));
+  }
+
+  async function loadAuthorizedSample(kind: "image" | "text") {
+    setAuthorized(true);
+    setError(null);
+    try {
+      if (kind === "image") {
+        const response = await fetch("/samples/corner-overlay.png");
+        if (!response.ok) throw new Error("sample missing");
+        const blob = await response.blob();
+        await ingestFile(new File([blob], "authorized-sample.png", { type: "image/png" }), true);
+        return;
+      }
+      const response = await fetch("/samples/sample.txt");
+      if (!response.ok) throw new Error("sample missing");
+      const text = await response.text();
+      await ingestFile(new File([text], "authorized-sample.txt", { type: "text/plain" }), true);
+    } catch {
+      setError("The authorized sample could not be loaded.");
+    }
   }
 
   function removeAllDetected() {
@@ -135,18 +163,33 @@ export function Workspace() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       {step === "idle" ? (
         <>
+          <SiteHeader />
           <header className="space-y-4 text-center">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-800">Watermark Cleanup</p>
             <h1 className="text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
               Remove unwanted watermarks from your files
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-stone-600">
               Upload your own or authorized media, review detected overlays, and export a clean version.
+              Processing stays on this device whenever possible.
             </p>
           </header>
+          <HowItWorks />
           <AuthorizationGate checked={authorized} onCheckedChange={setAuthorized} />
           <Dropzone disabled={!authorized} onFile={onFile} onText={onText} />
-          <p className="text-center text-sm text-stone-500">Images • PDFs • Documents</p>
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-sm text-stone-500">Try an authorized sample created for this project</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button type="button" variant="outline" onClick={() => void loadAuthorizedSample("image")}>
+                <ImageIcon className="h-4 w-4" />
+                Sample image
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void loadAuthorizedSample("text")}>
+                <Type className="h-4 w-4" />
+                Sample text
+              </Button>
+            </div>
+          </div>
+          <p className="text-center text-sm text-stone-500">Images · PDFs · Documents</p>
         </>
       ) : null}
 
@@ -246,9 +289,16 @@ export function Workspace() {
 
       {error ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p> : null}
 
-      <footer className="flex items-start gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-600">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-800" />
-        <span>Your files are processed temporarily and automatically deleted. They are not used for model training.</span>
+      <footer className="flex flex-col gap-3 rounded-2xl bg-white/70 px-4 py-3 text-sm text-stone-600 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-800" />
+          <span>
+            Your files are processed temporarily and automatically deleted. They are not used for model training.
+          </span>
+        </div>
+        <a href={GITHUB_URL} className="shrink-0 text-teal-800 underline-offset-4 hover:underline">
+          Source on GitHub
+        </a>
       </footer>
     </div>
   );

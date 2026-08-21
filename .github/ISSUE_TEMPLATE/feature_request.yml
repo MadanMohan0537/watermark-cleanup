@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest a focused improvement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Keep proposals aligned with local-first processing and user review before removal.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the user-facing result, not only the implementation.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Detection
+        - Cleanup / reconstruction
+        - UI / review flow
+        - PDF or text support
+        - Deployment / docs
+        - Other
+    validations:
+      required: true

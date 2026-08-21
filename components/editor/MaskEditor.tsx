@@ -34,6 +34,18 @@ export function MaskEditor({
   const start = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (event.key === "r" || event.key === "R") onToolChange("rect");
+      if (event.key === "b" || event.key === "B") onToolChange("brush");
+      if (event.key === "e" || event.key === "E") onToolChange("erase");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onToolChange]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -95,7 +107,7 @@ export function MaskEditor({
       <div className="flex flex-wrap gap-2">
         {(["rect", "brush", "erase"] as Tool[]).map((item) => (
           <Button key={item} type="button" size="sm" variant={tool === item ? "secondary" : "outline"} onClick={() => onToolChange(item)}>
-            {item === "rect" ? "Rectangle" : item === "brush" ? "Brush" : "Erase"}
+            {item === "rect" ? "Rectangle (R)" : item === "brush" ? "Brush (B)" : "Erase (E)"}
           </Button>
         ))}
         <Button type="button" size="sm" variant="outline" onClick={onExpand}>

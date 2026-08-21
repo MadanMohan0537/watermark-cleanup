@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a broken detection, cleanup, or deployment path
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Use this form for unexpected behavior. Do not attach other people's files.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Include warning text if the app showed any.
+    validations:
+      required: true
+  - type: dropdown
+    id: media
+    attributes:
+      label: File type
+      options:
+        - Image (PNG / JPG / WEBP)
+        - PDF
+        - Text / Markdown
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Live demo, local `npm run dev`, or another host.
+      placeholder: https://watermark-cleanup.madanmohanlearning.workers.dev/
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Prefer the built-in sample files when they reproduce the issue.
+    validations:
+      required: true

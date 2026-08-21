@@ -34,6 +34,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     url: "/",
@@ -41,12 +45,21 @@ export const metadata: Metadata = {
     title: "Watermark Cleanup",
     description:
       "Review detected overlays and clean authorized images, PDFs, and text with a privacy-first workflow.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Watermark Cleanup: upload, review overlays, and export a cleaned copy.",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Watermark Cleanup",
     description:
       "Privacy-first overlay cleanup for authorized images, PDFs, and text with review before export.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,

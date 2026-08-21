@@ -12,6 +12,7 @@ This app uses `@opennextjs/cloudflare`.
 
 ```bash
 npm install
+npm run generate:assets
 npx wrangler login
 npm run deploy
 ```

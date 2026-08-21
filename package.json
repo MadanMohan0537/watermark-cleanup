@@ -3,6 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "description": "Privacy-focused watermark cleanup for images, PDFs, and documents.",
+  "license": "MIT",
+  "author": "Madan Mohan",
+  "homepage": "https://watermark-cleanup.madanmohanlearning.workers.dev/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MadanMohan0537/watermark-cleanup.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MadanMohan0537/watermark-cleanup/issues"
+  },
+  "keywords": [
+    "watermark",
+    "image-processing",
+    "pdf",
+    "nextjs",
+    "cloudflare-workers",
+    "privacy"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,6 +30,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:fixtures": "node scripts/generate-fixtures.mjs",
+    "generate:assets": "node scripts/generate-public-assets.mjs",
     "build:cloudflare": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",

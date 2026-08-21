@@ -1,8 +1,15 @@
 # Watermark Cleanup
 
+[![CI](https://github.com/MadanMohan0537/watermark-cleanup/actions/workflows/ci.yml/badge.svg)](https://github.com/MadanMohan0537/watermark-cleanup/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal.svg)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-0f766e)](https://watermark-cleanup.madanmohanlearning.workers.dev/)
+
 Privacy-first watermark and overlay cleanup for images, PDFs, and text documents. Upload content you own or are authorized to edit, review detected overlays, choose what should be removed, and export a cleaned copy without blindly modifying the original.
 
-**Live demo:** https://watermark-cleanup.madanmohanlearning.workers.dev/
+**Live demo:** https://watermark-cleanup.madanmohanlearning.workers.dev/  
+**Source:** https://github.com/MadanMohan0537/watermark-cleanup
+
+![Watermark Cleanup home screen](docs/screenshots/app-home.png)
 
 ## Why this project
 
@@ -16,10 +23,11 @@ Most watermark-removal tools either upload files to opaque services or apply agg
 
 - Drag-and-drop upload for PNG, JPG/JPEG, WEBP, PDF, TXT, and Markdown.
 - Paste-text input for document cleanup without creating a file first.
+- Built-in authorized sample image and sample text so you can try the workflow immediately.
 - Magic-byte file classification instead of trusting file extensions.
 - Heuristic overlay detection for corner badges, translucent regions, repeated patterns, timestamps, repeated headers, and overlay-like text.
 - Confidence-scored detections with per-region **Keep / Remove** review.
-- Manual rectangle, brush, erase, expand, and shrink tools for image masks.
+- Manual rectangle, brush, erase, expand, and shrink tools for image masks, with keyboard shortcuts `R`, `B`, and `E`.
 - Before/after comparison for cleaned images.
 - PDF page review and text-aware PDF cleanup without rasterizing the whole document when possible.
 - Side-by-side text diff before export.
@@ -30,7 +38,7 @@ Most watermark-removal tools either upload files to opaque services or apply agg
 ## How it works
 
 ```text
-Upload or paste content
+Upload, paste, or load a sample
         ↓
 Validate and classify file
         ↓
@@ -88,9 +96,10 @@ Video files can be classified by the processor registry, but video watermark cle
 
 - Browser/local processing is the default path.
 - Originals are not used for model training.
-- Server-side temporary files, when used, are addressed by random IDs and are intended to expire automatically.
+- Server-side temporary files, when used, are addressed by random IDs and expire after 30 minutes.
 - The original file is not modified in place.
-- The user must confirm ownership or permission before processing.
+- The user must confirm ownership or permission before processing their own files.
+- Built-in samples are project-owned fixtures, so they can be loaded without a separate upload.
 
 Use this project only for files you own or are authorized to edit. It is not intended to remove copyright notices, signatures, authenticity marks, licenses, or ownership identifiers from third-party material.
 
@@ -101,16 +110,28 @@ app/                  Next.js pages and API routes
 components/
   comparison/         Before/after and diff views
   editor/             Region review and manual mask tools
+  layout/             Site header and navigation
   results/            Export/download UI
   uploader/           Authorization and file-input flow
   workspace/          Main application workflow
 lib/                  Detection, processing, validation, storage, and shared types
+public/samples/       Authorized demo files used by the live app
 fixtures/             Authorized test fixtures
-docs/                 Architecture and deployment notes
-scripts/               Development utilities and fixture generation
+docs/                 Architecture, usage, API, and deployment notes
+scripts/              Fixture and public-asset generation
+.github/              CI, issue templates, and pull request template
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the processing architecture.
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [docs/usage.md](docs/usage.md) | End-user walkthrough |
+| [docs/architecture.md](docs/architecture.md) | Detection and cleanup pipeline |
+| [docs/api.md](docs/api.md) | Optional server API |
+| [docs/deployment.md](docs/deployment.md) | Cloudflare Workers / OpenNext |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to propose changes |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 
 ## Local development
 
@@ -124,10 +145,13 @@ git clone https://github.com/MadanMohan0537/watermark-cleanup.git
 cd watermark-cleanup
 npm install
 npm run generate:fixtures
+npm run generate:assets
 npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+On the home screen you can confirm permission and upload a file, or click **Sample image** / **Sample text** to run the built-in authorized examples.
 
 ## Quality checks
 
@@ -138,7 +162,7 @@ npm run typecheck
 npm run build
 ```
 
-Authorized test files are stored under `fixtures/authorized`.
+CI runs those checks on every push and pull request to `master`. Authorized test files are stored under `fixtures/authorized`.
 
 ## Cloudflare deployment
 
@@ -184,4 +208,4 @@ Please follow the reporting guidance in [SECURITY.md](SECURITY.md) for security 
 
 ## License
 
-Licensed under the terms in [LICENSE](LICENSE).
+Licensed under the [MIT License](LICENSE).

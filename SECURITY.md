@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email or open a private GitHub security advisory. Do not file a public issue for a vulnerability that could expose uploaded files.
+Open a [private GitHub security advisory](https://github.com/MadanMohan0537/watermark-cleanup/security/advisories/new). Do not file a public issue for a vulnerability that could expose uploaded files.
 
 ## Product constraints
 
