@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Cpu, LockKeyhole, Sparkles } from "lucide-react";
 
 type Capability = {
@@ -8,6 +8,31 @@ type Capability = {
   value: string;
   detail: string;
 };
+
+function Chip({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  detail?: string;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white/80 px-4 py-3"
+      title={detail}
+    >
+      <span className="text-teal-800">{icon}</span>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-teal-800">{label}</p>
+        <p className="text-sm font-medium text-stone-900">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 export function CapabilityStrip() {
   const [capability, setCapability] = useState<Capability>({
@@ -40,27 +65,14 @@ export function CapabilityStrip() {
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <div className="feature-chip">
-        <LockKeyhole className="h-4 w-4" />
-        <div>
-          <p className="feature-chip-label">Privacy</p>
-          <p className="feature-chip-value">Local first</p>
-        </div>
-      </div>
-      <div className="feature-chip" title={capability.detail}>
-        <Cpu className="h-4 w-4" />
-        <div>
-          <p className="feature-chip-label">{capability.label}</p>
-          <p className="feature-chip-value">{capability.value}</p>
-        </div>
-      </div>
-      <div className="feature-chip">
-        <Sparkles className="h-4 w-4" />
-        <div>
-          <p className="feature-chip-label">Review model</p>
-          <p className="feature-chip-value">Human controlled</p>
-        </div>
-      </div>
+      <Chip icon={<LockKeyhole className="h-4 w-4" />} label="Privacy" value="Local first" />
+      <Chip
+        icon={<Cpu className="h-4 w-4" />}
+        label={capability.label}
+        value={capability.value}
+        detail={capability.detail}
+      />
+      <Chip icon={<Sparkles className="h-4 w-4" />} label="Review model" value="Human controlled" />
     </div>
   );
 }

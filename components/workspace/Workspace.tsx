@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { FileText, ImageIcon, ShieldCheck, Type } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { HowItWorks } from "@/components/workspace/HowItWorks";
+import { CapabilityStrip } from "@/components/workspace/CapabilityStrip";
 import { AuthorizationGate } from "@/components/uploader/AuthorizationGate";
 import { Dropzone } from "@/components/uploader/Dropzone";
 import { RegionList } from "@/components/editor/RegionList";
@@ -222,6 +223,7 @@ export function Workspace() {
             </p>
           </header>
           <HowItWorks />
+          <CapabilityStrip />
           <AuthorizationGate checked={authorized} onCheckedChange={setAuthorized} />
           <Dropzone disabled={!authorized} onFile={onFile} onText={onText} />
           <div className="flex flex-col items-center gap-3">
