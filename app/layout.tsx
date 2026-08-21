@@ -13,9 +13,45 @@ const sans = Manrope({
   variable: "--font-sans",
 });
 
+const siteUrl = "https://watermark-cleanup.madanmohanlearning.workers.dev";
+
 export const metadata: Metadata = {
-  title: "Watermark Cleanup",
-  description: "Upload your own or authorized media, review detected overlays, and export a clean version.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Watermark Cleanup",
+    template: "%s | Watermark Cleanup",
+  },
+  description:
+    "Privacy-first cleanup for images, PDFs, and text you own or are authorized to edit. Review detected overlays before exporting a cleaned copy.",
+  applicationName: "Watermark Cleanup",
+  keywords: [
+    "watermark cleanup",
+    "overlay removal",
+    "image cleanup",
+    "PDF cleanup",
+    "privacy-first file processing",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Watermark Cleanup",
+    title: "Watermark Cleanup",
+    description:
+      "Review detected overlays and clean authorized images, PDFs, and text with a privacy-first workflow.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Watermark Cleanup",
+    description:
+      "Privacy-first overlay cleanup for authorized images, PDFs, and text with review before export.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

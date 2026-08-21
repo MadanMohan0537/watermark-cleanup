@@ -1,80 +1,135 @@
 # Watermark Cleanup
 
-Privacy-focused cleanup for files you own or are allowed to edit. Upload a file, review detected overlays, then export a clean copy.
+Privacy-first watermark and overlay cleanup for images, PDFs, and text documents. Upload content you own or are authorized to edit, review detected overlays, choose what should be removed, and export a cleaned copy without blindly modifying the original.
 
-This is a focused utility: **upload  identify unwanted overlay  review  remove  download**. It does not claim perfect watermark removal.
+**Live demo:** https://watermark-cleanup.madanmohanlearning.workers.dev/
 
-## What it does
+## Why this project
 
-- Accepts PNG, JPG/JPEG, WEBP (browser), PDF, and TXT/Markdown.
-- Looks for overlay-like marks: corner badges, translucent or diagonal text, repeated logos, timestamps, and repeated document headers.
-- Shows each detection with a bounding box, confidence, and Keep / Remove.
-- Reconstructs only the selected region for images. PDFs and text files keep layout and body content.
-- Processes in the browser whenever possible. Optional API routes store files only under random ids and delete them automatically.
+Most watermark-removal tools either upload files to opaque services or apply aggressive edits with little user control. Watermark Cleanup is designed around three principles:
 
-## How detection works
+- **User review first** — detections are suggestions, not automatic deletions.
+- **Least-destructive editing** — only selected regions are reconstructed or removed.
+- **Privacy by default** — the main processing path runs locally in the browser whenever possible.
 
-Files are classified from magic bytes, not extensions. Image detectors then score compact, overlay-like regions:
+## Core features
 
-- Alpha / transparency
-- Corner and edge contrast
-- Translucent luminance lift
-- Repeated tiled patterns
+- Drag-and-drop upload for PNG, JPG/JPEG, WEBP, PDF, TXT, and Markdown.
+- Paste-text input for document cleanup without creating a file first.
+- Magic-byte file classification instead of trusting file extensions.
+- Heuristic overlay detection for corner badges, translucent regions, repeated patterns, timestamps, repeated headers, and overlay-like text.
+- Confidence-scored detections with per-region **Keep / Remove** review.
+- Manual rectangle, brush, erase, expand, and shrink tools for image masks.
+- Before/after comparison for cleaned images.
+- PDF page review and text-aware PDF cleanup without rasterizing the whole document when possible.
+- Side-by-side text diff before export.
+- Local reconstruction / inpainting for selected image regions.
+- Downloadable cleaned output with warnings when cleanup is only partial.
+- Ownership / authorization confirmation before processing.
 
-PDF and text detectors look for rotated, translucent, or repeated overlay strings. Ordinary high-texture content is treated as part of the file, not a watermark.
+## How it works
 
-Automatic detection will miss some marks and can be wrong. Manual rectangle, brush, and erase tools are part of the product, not a fallback afterthought.
+```text
+Upload or paste content
+        ↓
+Validate and classify file
+        ↓
+Detect possible overlays
+        ↓
+User reviews / edits regions
+        ↓
+Apply least-destructive cleanup
+        ↓
+Compare original vs cleaned result
+        ↓
+Download cleaned file
+```
 
-## How removal works
+### Detection
 
-The pipeline picks the least destructive option first:
+Image detectors score overlay-like regions using signals such as transparency, edge/corner contrast, luminance changes, compact geometry, and repeated patterns. PDF and text detectors look for repeated, rotated, translucent, or overlay-like strings.
 
-1. Reverse a uniform translucent overlay when that model fits.
-2. Otherwise inpaint only the mask (Telea-style reconstruction).
-3. For PDFs, remove confirmed overlay text from page content instead of rasterizing the whole document.
-4. For text, show detected lines  proposed removal  resulting text, and delete nothing until you confirm.
+Detection is intentionally conservative. The application is designed to avoid silently removing normal body content.
 
-If leftover overlay signal is still high, the result is reported as partial.
+### Cleanup
+
+The processing pipeline prefers the least destructive option available:
+
+1. Reverse a uniform translucent overlay when the model fits.
+2. Otherwise reconstruct only the selected image mask using local inpainting.
+3. For PDFs, remove confirmed overlay text from page content when possible.
+4. For text, show the proposed result before anything is exported.
 
 ## Supported formats
 
-| Input | Output |
+| Input | Current output / behavior |
 | --- | --- |
-| PNG, JPG, JPEG | Same image type when possible |
-| WEBP | Clean image in the browser |
-| PDF | Clean PDF |
-| TXT / Markdown | Clean text |
+| PNG | Cleaned image |
+| JPG / JPEG | Cleaned image |
+| WEBP | Browser-side cleanup |
+| PDF | Cleaned PDF where supported |
+| TXT / Markdown | Cleaned text |
 
-Video is classified but not processed yet. The processor registry is set up so a video module can be added later.
+Video files can be classified by the processor registry, but video watermark cleanup is not implemented yet.
 
-## Privacy model
+## Tech stack
 
-Your files are processed temporarily and automatically deleted.
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js 16, React 19, TypeScript |
+| Styling / UI | Tailwind CSS, Radix UI, Lucide React |
+| Image processing | `fast-png`, `jpeg-js`, local pixel/mask pipeline |
+| PDF processing | `pdf-lib`, `pdfjs-dist` |
+| Validation | Zod |
+| Testing | Vitest |
+| Deployment | Cloudflare Workers via OpenNext |
 
-- Default path: local / browser processing. Uploads do not have to leave the device.
-- Server path: random file ids, no public original filenames, 30-minute TTL, no training use.
-- Confirm ownership or permission before processing.
+## Privacy and safety model
 
-Do not use this tool to strip copyright marks, licenses, signatures, or authenticity systems from someone else's material.
+- Browser/local processing is the default path.
+- Originals are not used for model training.
+- Server-side temporary files, when used, are addressed by random IDs and are intended to expire automatically.
+- The original file is not modified in place.
+- The user must confirm ownership or permission before processing.
 
-## Limitations
+Use this project only for files you own or are authorized to edit. It is not intended to remove copyright notices, signatures, authenticity marks, licenses, or ownership identifiers from third-party material.
 
-- Detection is heuristic. It will miss some overlays and should never silently delete body content.
-- Baked-in photographic watermarks can leave seams after inpainting.
-- Encrypted PDFs are rejected.
-- WEBP decode on the server is not supported; use the web app.
-- OpenCV.js and OCR APIs are optional hooks, not required for the core path.
-- Results are best-effort, not forensic restoration.
+## Project structure
+
+```text
+app/                  Next.js pages and API routes
+components/
+  comparison/         Before/after and diff views
+  editor/             Region review and manual mask tools
+  results/            Export/download UI
+  uploader/           Authorization and file-input flow
+  workspace/          Main application workflow
+lib/                  Detection, processing, validation, storage, and shared types
+fixtures/             Authorized test fixtures
+docs/                 Architecture and deployment notes
+scripts/               Development utilities and fixture generation
+```
+
+See [docs/architecture.md](docs/architecture.md) for the processing architecture.
 
 ## Local development
 
+### Requirements
+
+- Node.js 20+
+- npm
+
 ```bash
+git clone https://github.com/MadanMohan0537/watermark-cleanup.git
+cd watermark-cleanup
 npm install
 npm run generate:fixtures
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open `http://localhost:3000`.
+
+## Quality checks
 
 ```bash
 npm test
@@ -83,18 +138,50 @@ npm run typecheck
 npm run build
 ```
 
-Authorized sample files live in `fixtures/authorized`.
+Authorized test files are stored under `fixtures/authorized`.
 
-## Deployment
+## Cloudflare deployment
 
-Host on **Cloudflare Workers** with OpenNext:
+This project is configured for **Cloudflare Workers** using `@opennextjs/cloudflare`.
 
 ```bash
 npx wrangler login
 npm run deploy
 ```
 
-For Cloudflare's Git-connected Workers Builds, use `npm run build:cloudflare` as the build command and `npx opennextjs-cloudflare deploy` as the deploy command. A plain `npm run build` does not create the required `.open-next` Worker output.
+For Git-connected Cloudflare Workers Builds:
 
-See [docs/deployment.md](docs/deployment.md) and [docs/architecture.md](docs/architecture.md).
+| Setting | Value |
+| --- | --- |
+| Build command | `npm run build:cloudflare` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Root directory | `/` |
 
+A plain `npm run build` only creates the standard Next.js output and is not enough for a Workers deployment.
+
+Detailed deployment instructions are available in [docs/deployment.md](docs/deployment.md).
+
+## Current limitations
+
+- Overlay detection is heuristic and can miss subtle or highly blended marks.
+- Complex photographic reconstruction can leave visible seams.
+- Encrypted PDFs are rejected.
+- Server-side WEBP decoding is not supported; use the browser path.
+- OCR and OpenCV.js integrations are optional extension points rather than hard dependencies.
+- Video cleanup is not implemented yet.
+
+## Possible next steps
+
+Good future extensions include batch processing, optional OCR-assisted text-mask detection, worker-backed job history with strict TTL deletion, and video-frame cleanup with temporal consistency.
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
+## Security
+
+Please follow the reporting guidance in [SECURITY.md](SECURITY.md) for security issues.
+
+## License
+
+Licensed under the terms in [LICENSE](LICENSE).
