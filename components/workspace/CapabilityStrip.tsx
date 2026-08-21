@@ -1,42 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Cpu, LockKeyhole, Sparkles } from "lucide-react";
 
-type Capability = {
-  label: string;
-  value: string;
-  detail: string;
-};
+const subscribe = () => () => {};
+const serverSnapshot = () => false;
+
+function useBrowserCapability(check: () => boolean) {
+  return useSyncExternalStore(subscribe, check, serverSnapshot);
+}
 
 export function CapabilityStrip() {
-  const [capability, setCapability] = useState<Capability>({
-    label: "Local engine",
-    value: "Browser",
-    detail: "Processing stays on-device whenever the selected format supports it.",
-  });
+  const hasWebGpu = useBrowserCapability(() => typeof navigator !== "undefined" && "gpu" in navigator);
+  const hasWasm = useBrowserCapability(() => typeof WebAssembly !== "undefined");
 
-  useEffect(() => {
-    const hasWebGpu = "gpu" in navigator;
-    const hasWasm = typeof WebAssembly !== "undefined";
-
-    if (hasWebGpu) {
-      setCapability({
+  const capability = hasWebGpu
+    ? {
         label: "Device capability",
         value: "WebGPU ready",
         detail: "This browser exposes WebGPU for future accelerated local vision modules.",
-      });
-      return;
-    }
-
-    if (hasWasm) {
-      setCapability({
-        label: "Device capability",
-        value: "WebAssembly ready",
-        detail: "This browser supports local WebAssembly processing.",
-      });
-    }
-  }, []);
+      }
+    : hasWasm
+      ? {
+          label: "Device capability",
+          value: "WebAssembly ready",
+          detail: "This browser supports local WebAssembly processing.",
+        }
+      : {
+          label: "Local engine",
+          value: "Browser",
+          detail: "Processing stays on-device whenever the selected format supports it.",
+        };
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
