@@ -36,5 +36,5 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Build
-        run: npm run build
+      - name: Build Cloudflare Worker
+        run: npm run build:worker
