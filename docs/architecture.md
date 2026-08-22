@@ -12,7 +12,7 @@ Processors share one interface in `lib/processors` so a later video module can r
 
 - `lib/security` — magic-byte sniffing, size limits, filename sanitization, rate limits
 - `lib/detection` — modular image detectors (alpha, corner contrast, translucent lift, repeated pattern)
-- `lib/image-processing` — RGBA buffers, morphology, Telea-style inpainting, overlay subtraction
+- `lib/image-processing` — RGBA buffers, morphology, texture-aware exemplar reconstruction, conservative diffusion fallback, overlay subtraction
 - `lib/pdf-processing` — overlay-like PDF text detection and confirmed text removal, keeping page layout
 - `lib/text-processing` — repeated header/footer proposal; nothing is deleted until the user confirms
 - `lib/storage` — in-memory jobs with random ids and a 30-minute TTL
@@ -43,8 +43,23 @@ Candidates are scored. Large, colorful, high-texture regions are treated as cont
 Least destructive first:
 
 1. Reverse a uniform translucent overlay when the region looks like a blend.
-2. Otherwise inpaint only the selected mask.
+2. Otherwise reconstruct only the selected mask with texture-aware exemplar inpainting.
 3. For PDF/text, remove only user-confirmed strings and keep the rest of the document.
+
+### Texture-aware image reconstruction
+
+The primary image fallback no longer fills a removed region by repeatedly averaging nearby pixels. That approach can create a soft or cloudy patch on photographic content.
+
+Instead, every connected removal region now:
+
+1. Builds a narrow ring of clean context around the selected mask.
+2. Searches nearby unmasked content for a donor region whose surrounding colors best match that context.
+3. Copies only the pixels covered by the removal mask, preserving texture rather than replacing it with an average.
+4. Applies a bounded local color correction so the donor follows the target region's lighting and color cast.
+5. Harmonizes only the immediate seam at low strength.
+6. Falls back to conservative diffusion only when no clean donor can be found.
+
+This is designed to preserve scene texture in areas such as sky and clouds, water, walls, roads, foliage, fabric, and other locally repetitive photographic backgrounds.
 
 If reconstruction still looks overlay-like, the app reports a partial result instead of pretending it succeeded.
 
