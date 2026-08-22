@@ -35,6 +35,16 @@ describe("image reconstruction", () => {
 
   it("uses nearby scene texture instead of flattening a removed region", () => {
     const original = naturalScene(120, 80);
+    for (let y = 0; y < original.height; y += 1) {
+      for (let x = 0; x < original.width; x += 1) {
+        const i = (y * original.width + x) * 4;
+        const texture = ((x % 6) - 2.5) * 3 + ((y % 4) - 1.5) * 2;
+        original.data[i] += texture;
+        original.data[i + 1] += texture * 0.8;
+        original.data[i + 2] += texture * 0.6;
+      }
+    }
+
     const edited = cloneImage(original);
     const x0 = 48;
     const y0 = 24;
@@ -50,7 +60,8 @@ describe("image reconstruction", () => {
     const restored = inpaintExemplar(edited, mask);
     let beforeError = 0;
     let afterError = 0;
-    const values: number[] = [];
+    const restoredValues: number[] = [];
+    const originalValues: number[] = [];
     for (let y = y0; y < y0 + h; y += 1) {
       for (let x = x0; x < x0 + w; x += 1) {
         const i = (y * edited.width + x) * 4;
@@ -58,13 +69,17 @@ describe("image reconstruction", () => {
           beforeError += Math.abs(edited.data[i + c] - original.data[i + c]);
           afterError += Math.abs(restored.data[i + c] - original.data[i + c]);
         }
-        values.push(luminance(restored.data[i], restored.data[i + 1], restored.data[i + 2]));
+        restoredValues.push(luminance(restored.data[i], restored.data[i + 1], restored.data[i + 2]));
+        originalValues.push(luminance(original.data[i], original.data[i + 1], original.data[i + 2]));
       }
     }
 
-    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-    const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+    const restoredMean = restoredValues.reduce((sum, value) => sum + value, 0) / restoredValues.length;
+    const restoredVariance = restoredValues.reduce((sum, value) => sum + (value - restoredMean) ** 2, 0) / restoredValues.length;
+    const originalMean = originalValues.reduce((sum, value) => sum + value, 0) / originalValues.length;
+    const originalVariance = originalValues.reduce((sum, value) => sum + (value - originalMean) ** 2, 0) / originalValues.length;
+
     expect(afterError).toBeLessThan(beforeError * 0.55);
-    expect(variance).toBeGreaterThan(4);
+    expect(restoredVariance).toBeGreaterThan(originalVariance * 0.45);
   });
 });
