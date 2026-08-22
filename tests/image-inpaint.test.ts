@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { imageProcessor } from "@/lib/image-processing";
 import { decodeImageBytes } from "@/lib/image-processing/codec";
+import { inpaintExemplar } from "@/lib/image-processing/inpaint";
 import { asPngFile, cornerOverlayImage, naturalScene } from "./helpers/fixtures";
-import { luminance } from "@/lib/image-processing/buffer";
+import { cloneImage, fillRect, luminance } from "@/lib/image-processing/buffer";
 
 describe("image reconstruction", () => {
   it("leaves a clean image unchanged when no region is selected", async () => {
@@ -30,5 +31,40 @@ describe("image reconstruction", () => {
     const beforeI = (y * original.width + x) * 4;
     const before = luminance(original.data[beforeI], original.data[beforeI + 1], original.data[beforeI + 2]);
     expect(Math.abs(after - before) > 8 || after < 240).toBe(true);
+  });
+
+  it("uses nearby scene texture instead of flattening a removed region", () => {
+    const original = naturalScene(120, 80);
+    const edited = cloneImage(original);
+    const x0 = 48;
+    const y0 = 24;
+    const w = 18;
+    const h = 14;
+    fillRect(edited, x0, y0, w, h, [250, 250, 250, 255]);
+
+    const mask = new Uint8Array(edited.width * edited.height);
+    for (let y = y0; y < y0 + h; y += 1) {
+      for (let x = x0; x < x0 + w; x += 1) mask[y * edited.width + x] = 1;
+    }
+
+    const restored = inpaintExemplar(edited, mask);
+    let beforeError = 0;
+    let afterError = 0;
+    const values: number[] = [];
+    for (let y = y0; y < y0 + h; y += 1) {
+      for (let x = x0; x < x0 + w; x += 1) {
+        const i = (y * edited.width + x) * 4;
+        for (let c = 0; c < 3; c += 1) {
+          beforeError += Math.abs(edited.data[i + c] - original.data[i + c]);
+          afterError += Math.abs(restored.data[i + c] - original.data[i + c]);
+        }
+        values.push(luminance(restored.data[i], restored.data[i + 1], restored.data[i + 2]));
+      }
+    }
+
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+    expect(afterError).toBeLessThan(beforeError * 0.55);
+    expect(variance).toBeGreaterThan(4);
   });
 });
