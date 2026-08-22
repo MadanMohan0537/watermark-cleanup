@@ -5,7 +5,7 @@
   "compatibility_date": "2025-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "build": {
-    "command": "npm run build"
+    "command": "npm run build:worker"
   },
   "assets": {
     "directory": ".open-next/assets",
