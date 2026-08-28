@@ -3,13 +3,23 @@ import { decode as decodePng, encode as encodePng } from "fast-png";
 import jpeg from "jpeg-js";
 import { AppError } from "@/lib/errors";
 import type { RgbaImage } from "@/lib/image-processing/buffer";
+import { assertImageDimensions } from "@/lib/security/limits";
+
+function pngHeaderDimensions(bytes: Uint8Array) {
+  if (bytes.length < 24) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
+}
 
 export function decodeImageBytes(bytes: Uint8Array, mimeType: string): RgbaImage {
   try {
     if (mimeType === "image/png") {
+      const header = pngHeaderDimensions(bytes);
+      if (header) assertImageDimensions(header.width, header.height);
       const decoded = decodePng(bytes);
       const width = decoded.width;
       const height = decoded.height;
+      assertImageDimensions(width, height);
       const src = decoded.data;
       const data = new Uint8ClampedArray(width * height * 4);
       const channels = src.length / (width * height);
@@ -37,13 +47,15 @@ export function decodeImageBytes(bytes: Uint8Array, mimeType: string): RgbaImage
 
     if (mimeType === "image/jpeg") {
       const decoded = jpeg.decode(bytes, { maxMemoryUsageInMB: 128, useTArray: true });
+      assertImageDimensions(decoded.width, decoded.height);
       return {
         width: decoded.width,
         height: decoded.height,
         data: new Uint8ClampedArray(decoded.data),
       };
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError("corrupted_file", "The image could not be decoded. It may be corrupted.");
   }
 
@@ -75,9 +87,18 @@ export function encodeImageBytes(image: RgbaImage, mimeType: string): Uint8Array
 
 export async function decodeWithCanvas(file: Blob): Promise<RgbaImage> {
   const bitmap = await createImageBitmap(file);
+  try {
+    assertImageDimensions(bitmap.width, bitmap.height);
+  } catch (error) {
+    bitmap.close();
+    throw error;
+  }
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new AppError("processing_failure", "Could not read this image in the browser.");
+  if (!ctx) {
+    bitmap.close();
+    throw new AppError("processing_failure", "Could not read this image in the browser.");
+  }
   ctx.drawImage(bitmap, 0, 0);
   const pixels = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
   bitmap.close();

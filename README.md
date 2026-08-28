@@ -39,6 +39,7 @@ Watermark Cleanup takes a different approach:
 - Authorized built-in sample image, PDF, and text files for instant testing.
 - Paste-text mode for trying the document workflow without uploading a file.
 - Magic-byte/file-content classification instead of trusting extensions alone.
+- Decoded-image dimension and pixel budgets to reduce decompression-bomb risk.
 - Heuristic overlay detection with confidence-scored **Keep / Remove** review.
 - Rectangle, brush, and erase mask tools.
 - Expand/shrink mask refinement.
@@ -144,6 +145,8 @@ The processor chooses the least destructive available operation for the selected
 | Markdown | Detect repeated overlay-like text → review → diff → export |
 
 Video files can be recognized by the processor architecture, but video cleanup is **not implemented**.
+
+Images are limited to 8,000 pixels per side and 12 megapixels after decoding, in addition to the upload byte limits. This protects local and server processing from unexpectedly large decoded pixel buffers.
 
 ---
 

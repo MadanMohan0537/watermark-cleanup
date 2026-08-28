@@ -4,6 +4,7 @@ import { classifyUpload } from "@/lib/security/classify";
 import { AppError } from "@/lib/errors";
 import { asPngFile, naturalScene } from "./helpers/fixtures";
 import { encodeImageBytes } from "@/lib/image-processing/codec";
+import { MAX_IMAGE_DIMENSION, assertImageDimensions } from "@/lib/security/limits";
 
 describe("file classification", () => {
   it("accepts a clean png by signature, not extension", () => {
@@ -28,5 +29,14 @@ describe("file classification", () => {
     const { imageProcessor } = await import("@/lib/image-processing");
     const file = classifyUpload(header, "broken.png");
     await expect(imageProcessor.analyze(file)).rejects.toThrow(/corrupted/i);
+  });
+
+  it("rejects decoded images that exceed the safe dimension budget", () => {
+    expect(() => assertImageDimensions(MAX_IMAGE_DIMENSION + 1, 1)).toThrow(/too large/i);
+    expect(() => assertImageDimensions(4_000, 4_000)).toThrow(/too large/i);
+  });
+
+  it("accepts decoded images within the safe dimension budget", () => {
+    expect(() => assertImageDimensions(3_000, 3_000)).not.toThrow();
   });
 });
