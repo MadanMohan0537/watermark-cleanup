@@ -317,7 +317,6 @@ export function Workspace() {
                   <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-stone-100/20 via-white/10 to-emerald-200/10 p-4">
                     <div className="relative h-full overflow-hidden rounded-lg border border-white/10 bg-[#d6ddd8]/10">
                       <div className="absolute inset-x-[12%] top-[18%] h-[48%] rounded-xl border border-emerald-200/35 bg-emerald-200/5" />
-                      <div className="absolute bottom-4 left-4 rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-xs text-white/70">Candidate region · 86%</div>
                     </div>
                   </div>
                 </div>
