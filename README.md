@@ -19,6 +19,20 @@ Instead of treating cleanup as a black box, Watermark Cleanup exposes the detect
 
 ---
 
+## Build the artifact you intend to run
+
+| Command | Purpose |
+| --- | --- |
+| `npm run build` | Standard Next.js production build |
+| `npm run start` | Serve the standard Next.js build |
+| `npm run build:worker` | OpenNext Cloudflare build plus Worker artifact verification |
+| `npm run preview` | Build and preview the Cloudflare artifact |
+| `npm run deploy` | Build and deploy to the configured Cloudflare account |
+
+The two build targets are distinct. A successful Next.js build alone does not demonstrate that the Cloudflare artifact exists. Review [deployment guidance](docs/deployment.md) alongside `package.json` and `wrangler.jsonc`.
+
+For a first evaluation, use the included samples and inspect false detections, mask boundaries and the exported processing report. Keep the original file so that a cleanup can be reviewed and reversed.
+
 ## Why this project exists
 
 Most cleanup tools optimize for one-click removal. That is convenient, but it can also be destructive: false detections may erase valid content, users often cannot see what changed, and files may be sent to a remote service unnecessarily.
@@ -237,7 +251,7 @@ npm run test             # Vitest suite
 npm run lint             # ESLint
 npm run typecheck        # TypeScript validation
 npm run build:next       # Plain Next.js production build
-npm run build            # OpenNext Cloudflare Worker build
+npm run build:worker     # OpenNext Cloudflare Worker build
 npm run preview          # Build and preview the Worker locally
 npm run deploy           # Build and deploy through OpenNext
 ```
@@ -279,10 +293,10 @@ The app is deployed as a Next.js application on **Cloudflare Workers** through O
 
 Therefore the deployment pipeline must run an **OpenNext build**, not only `next build`.
 
-The repository is configured so:
+The Cloudflare build target is:
 
 ```bash
-npm run build
+npm run build:worker
 ```
 
 runs:
@@ -309,7 +323,7 @@ For Cloudflare Workers Builds, a compatible setup is:
 
 | Setting | Value |
 | --- | --- |
-| Build command | `npm run build` |
+| Build command | `npm run build:worker` |
 | Deploy command | `npx wrangler versions upload` |
 | Worker entry point | `.open-next/worker.js` |
 | Assets | `.open-next/assets` |
